@@ -23,7 +23,8 @@ for iFile in range(0, nFiles):
     nAOI = int(np.amax(aoifits_data[:, 0]))
     nFrame = int(np.amax(aoifits_data[:, 1]))
     intensity_table = aoifits_data[:, 7].reshape((nFrame, nAOI))
-    os.mkdir(datapath / filestr)
+    if not os.path.isdir(datapath / filestr):
+        os.mkdir(datapath / filestr)
     for i in range(0, nAOI):
 
         Traces = intervals[0, 0]['AllTracesCellArray'][i, 0][:, 0]
