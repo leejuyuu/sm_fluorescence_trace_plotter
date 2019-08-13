@@ -30,8 +30,8 @@ for iFile in range(0, nFiles):
     redVit = np.zeros((nAOIs,nFrames,2))
     greenVit = np.zeros((nAOIs, nFrames, 2))
     for iAOI in range(0,nAOIs):
-        redVit[iAOI,:, 0] = eb_file['redVit'][0, iAOI]['x'].reshape((nFrames))
-        redVit[iAOI,:, 1] = eb_file['redVit'][0, iAOI]['z'].reshape((nFrames))
+        redVit[iAOI, :, 0] = eb_file['redVit'][0, iAOI]['x'].reshape((nFrames))
+        redVit[iAOI, :, 1] = eb_file['redVit'][0, iAOI]['z'].reshape((nFrames))
     for iAOI in range(0,nAOIs):
         greenVit[iAOI, :, 0] = eb_file['greenVit'][0, iAOI]['x'].reshape((nFrames))
         greenVit[iAOI, :, 1] = eb_file['greenVit'][0, iAOI]['z'].reshape((nFrames))
