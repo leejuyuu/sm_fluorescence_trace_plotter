@@ -25,7 +25,7 @@ for iFile in range(0, nFiles):
     interval_file = sio.loadmat(interval_file_path)
     intervals = interval_file['IntervalDataStructure']
 
-    eb_file_path = Path('D:\TYL\Google Drive\Research\All software editing\ebfret-script\\test0811_ebparam.mat')
+    eb_file_path = datapath / (filestr + '_eb.dat')
     eb_file = sio.loadmat(eb_file_path)
     redVit = np.zeros((nAOIs,nFrames,2))
     greenVit = np.zeros((nAOIs, nFrames, 2))
