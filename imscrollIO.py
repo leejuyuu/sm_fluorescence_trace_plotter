@@ -52,3 +52,20 @@ def import_time_stamps(intensity):
     intensity = intensity.assign_coords(time=time_stamps)
 
     return intensity
+
+
+def import_interval_results(intensity, channel='green'):
+    interval_file_path = intensity.datapath / (intensity.filestr + '_interval.dat')
+    interval_file = sio.loadmat(interval_file_path)
+    interval_traces = np.zeros(intensity.shape[0:2])
+    for iAOI in range(0, intensity.shape[0]):
+        interval_traces[iAOI, :] = \
+            interval_file['IntervalDataStructure'][0, 0]['AllTracesCellArray'][iAOI, 0][:, 0]
+    interval_traces = np.expand_dims(interval_traces, 3)
+    interval_traces = xr.DataArray(interval_traces,
+                             dims=('AOI', 'time', 'channel'),
+                             coords={'AOI': range(intensity.shape[0]),
+                                     'channel': [channel]})
+
+    return interval_traces
+
