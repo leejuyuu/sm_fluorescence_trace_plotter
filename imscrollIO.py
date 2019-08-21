@@ -12,7 +12,7 @@ def def_data_path():
     return datapath
 
 
-def import_intensity_traces(datapath, filestr):
+def initialize_data_from_intensity_traces(datapath, filestr):
     intensity_file_path = datapath / (filestr + '_traces.dat')
     traces_file = sio.loadmat(intensity_file_path)
     array_shape = traces_file['traces']['green'][0, 0].shape
@@ -26,7 +26,12 @@ def import_intensity_traces(datapath, filestr):
     intensity.attrs['datapath'] = datapath
     intensity.attrs['filestr'] = filestr
 
-    return intensity
+    data = xr.Dataset({'intensity': (['AOI', 'time', 'channel'], intensity)},
+                    coords={'AOI': intensity.AOI,
+                            'time': intensity.time,
+                            'channel': intensity.channel})
+
+    return data
 
 def import_image_path_from_driftfit(intensity):
     driftfit_file_path = intensity.datapath / (intensity.filestr + '_driftfit.dat')
@@ -68,4 +73,5 @@ def import_interval_results(intensity, channel='green'):
                                      'channel': [channel]})
 
     return interval_traces
+
 
