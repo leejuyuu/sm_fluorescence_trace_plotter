@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 
+
 def import_everything(filestr):
     datapath = def_data_path()
     data = initialize_data_from_intensity_traces(datapath, filestr)
@@ -29,8 +30,6 @@ def initialize_data_from_intensity_traces(datapath, filestr):
                              dims=('AOI', 'time', 'channel'),
                              coords={'AOI': range(1, array_shape[0]+1),
                                      'channel': ['green', 'red']})
-
-
     data = xr.Dataset({'intensity': (['AOI', 'time', 'channel'], intensity)},
                       coords={'AOI': intensity.AOI,
                               'time': intensity.time,
@@ -39,6 +38,7 @@ def initialize_data_from_intensity_traces(datapath, filestr):
     data.attrs['filestr'] = filestr
 
     return data
+
 
 def import_image_path_from_driftfit(data):
     driftfit_file_path = data.datapath / (data.filestr + '_driftfit.dat')
@@ -79,31 +79,24 @@ def import_interval_results(data, channel='green'):
                                    coords={'AOI': range(1, data.intensity.shape[0]+1),
                                            'channel': [channel]})
     data['interval_traces'] = interval_traces
-
-
     return data
 
 
 def import_viterbi_paths(data):
     eb_file_path = data.datapath / (data.filestr + '_eb.dat')
     eb_file = sio.loadmat(eb_file_path)
-    redVit = np.zeros((len(data.AOI), len(data.time), 2))
-    greenVit = np.zeros((len(data.AOI), len(data.time), 2))
+    red_vit = np.zeros((len(data.AOI), len(data.time), 2))
+    green_vit = np.zeros((len(data.AOI), len(data.time), 2))
     for iAOI in range(0, len(data.AOI)):
-        redVit[iAOI, :, 0] = eb_file['redVit'][0, iAOI]['x'].reshape((len(data.time)))
-        redVit[iAOI, :, 1] = eb_file['redVit'][0, iAOI]['z'].reshape((len(data.time)))
+        red_vit[iAOI, :, 0] = eb_file['redVit'][0, iAOI]['x'].reshape((len(data.time)))
+        red_vit[iAOI, :, 1] = eb_file['redVit'][0, iAOI]['z'].reshape((len(data.time)))
     for iAOI in range(0, len(data.AOI)):
-        greenVit[iAOI, :, 0] = eb_file['greenVit'][0, iAOI]['x'].reshape((len(data.time)))
-        greenVit[iAOI, :, 1] = eb_file['greenVit'][0, iAOI]['z'].reshape((len(data.time)))
-    viterbi_path = np.stack((redVit, greenVit), -1)
+        green_vit[iAOI, :, 0] = eb_file['greenVit'][0, iAOI]['x'].reshape((len(data.time)))
+        green_vit[iAOI, :, 1] = eb_file['greenVit'][0, iAOI]['z'].reshape((len(data.time)))
+    viterbi_path = np.stack((red_vit, green_vit), -1)
     viterbi_path = xr.DataArray(viterbi_path,
                                 dims=('AOI', 'time', 'state', 'channel'),
                                 coords={'channel': ['red', 'green'],
                                         'state': ['position', 'label']})
     data['viterbi_path'] = viterbi_path
     return data
-
-
-
-
-
