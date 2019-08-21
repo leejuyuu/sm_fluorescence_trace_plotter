@@ -1,9 +1,6 @@
 import scipy.io as sio
 import numpy as np
-import matplotlib.pyplot as plt
-import os
 from pathlib import Path
-import pandas as pd
 import xarray as xr
 
 
@@ -21,7 +18,7 @@ def initialize_data_from_intensity_traces(datapath, filestr):
                          -1)
     intensity = xr.DataArray(intensity,
                              dims=('AOI', 'time', 'channel'),
-                             coords={'AOI': range(array_shape[0]),
+                             coords={'AOI': range(1, array_shape[0]+1),
                                      'channel': ['green', 'red']})
 
 
@@ -70,11 +67,34 @@ def import_interval_results(data, channel='green'):
     interval_traces = np.expand_dims(interval_traces, 3)
     interval_traces = xr.DataArray(interval_traces,
                                    dims=('AOI', 'time', 'channel'),
-                                   coords={'AOI': range(data.intensity.shape[0]),
+                                   coords={'AOI': range(1, data.intensity.shape[0]+1),
                                            'channel': [channel]})
     data['interval_traces'] = interval_traces
 
 
     return data
+
+
+def import_viterbi_paths(data):
+    eb_file_path = data.datapath / (data.filestr + '_eb.dat')
+    eb_file = sio.loadmat(eb_file_path)
+    redVit = np.zeros((len(data.AOI), len(data.time), 2))
+    greenVit = np.zeros((len(data.AOI), len(data.time), 2))
+    for iAOI in range(0, len(data.AOI)):
+        redVit[iAOI, :, 0] = eb_file['redVit'][0, iAOI]['x'].reshape((len(data.time)))
+        redVit[iAOI, :, 1] = eb_file['redVit'][0, iAOI]['z'].reshape((len(data.time)))
+    for iAOI in range(0, len(data.AOI)):
+        greenVit[iAOI, :, 0] = eb_file['greenVit'][0, iAOI]['x'].reshape((len(data.time)))
+        greenVit[iAOI, :, 1] = eb_file['greenVit'][0, iAOI]['z'].reshape((len(data.time)))
+    viterbi_path = np.stack((redVit, greenVit), -1)
+    viterbi_path = xr.DataArray(viterbi_path,
+                                dims=('AOI', 'time', 'state', 'channel'),
+                                coords={'channel': ['red', 'green'],
+                                        'state': ['position', 'label']})
+    data['viterbi_path'] = viterbi_path
+    return data
+
+
+
 
 
