@@ -3,6 +3,15 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 
+def import_everything(filestr):
+    datapath = def_data_path()
+    data = initialize_data_from_intensity_traces(datapath, filestr)
+    data = import_image_path_from_driftfit(data)
+    data = import_time_stamps(data)
+    data = import_interval_results(data)
+    data = import_viterbi_paths(data)
+    return data
+
 
 def def_data_path():
     datapath = Path('D:/matlab_CoSMoS/data/')
