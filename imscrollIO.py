@@ -23,55 +23,58 @@ def initialize_data_from_intensity_traces(datapath, filestr):
                              dims=('AOI', 'time', 'channel'),
                              coords={'AOI': range(array_shape[0]),
                                      'channel': ['green', 'red']})
-    intensity.attrs['datapath'] = datapath
-    intensity.attrs['filestr'] = filestr
+
 
     data = xr.Dataset({'intensity': (['AOI', 'time', 'channel'], intensity)},
-                    coords={'AOI': intensity.AOI,
-                            'time': intensity.time,
-                            'channel': intensity.channel})
+                      coords={'AOI': intensity.AOI,
+                              'time': intensity.time,
+                              'channel': intensity.channel})
+    data.attrs['datapath'] = datapath
+    data.attrs['filestr'] = filestr
 
     return data
 
-def import_image_path_from_driftfit(intensity):
-    driftfit_file_path = intensity.datapath / (intensity.filestr + '_driftfit.dat')
+def import_image_path_from_driftfit(data):
+    driftfit_file_path = data.datapath / (data.filestr + '_driftfit.dat')
     driftfit_file = sio.loadmat(driftfit_file_path)
-    intensity.attrs['image_path'] = Path(driftfit_file['aoifits']['tifFile'][0][0][0])
-    return intensity
+    data.attrs['image_path'] = Path(driftfit_file['aoifits']['tifFile'][0][0][0])
+    return data
 
 
-def import_time_stamps(intensity):
-    time_stamp_txt = intensity.attrs['image_path'].with_suffix('.txt')
+def import_time_stamps(data):
+    time_stamp_txt = data.attrs['image_path'].with_suffix('.txt')
     time_data = np.loadtxt(time_stamp_txt)
     time_data[1, :] = np.cumsum(time_data[1, :])
-    intcorrected_file_path = intensity.datapath / (intensity.filestr + '_intcorrected.dat')
+    intcorrected_file_path = data.datapath / (data.filestr + '_intcorrected.dat')
     intcorrected_file = sio.loadmat(intcorrected_file_path)
     frames_used_in_intensity_cal = intcorrected_file['aoifits']['dataRed'][0, 0][:, 1]
     frame_start = int(frames_used_in_intensity_cal.min())
     frame_end = int(frames_used_in_intensity_cal.max())
 
-    intensity.attrs['frame_start'] = frame_start
-    intensity.attrs['frame_end'] = frame_end
+    data.attrs['frame_start'] = frame_start
+    data.attrs['frame_end'] = frame_end
 
     time_stamps = time_data[1, frame_start:frame_end+1]
-    intensity = intensity.assign_coords(time=time_stamps)
+    data = data.assign_coords(time=time_stamps)
 
-    return intensity
+    return data
 
 
-def import_interval_results(intensity, channel='green'):
-    interval_file_path = intensity.datapath / (intensity.filestr + '_interval.dat')
+def import_interval_results(data, channel='green'):
+    interval_file_path = data.datapath / (data.filestr + '_interval.dat')
     interval_file = sio.loadmat(interval_file_path)
-    interval_traces = np.zeros(intensity.shape[0:2])
-    for iAOI in range(0, intensity.shape[0]):
+    interval_traces = np.zeros(data.intensity.shape[0:2])
+    for iAOI in range(0, data.intensity.shape[0]):
         interval_traces[iAOI, :] = \
             interval_file['IntervalDataStructure'][0, 0]['AllTracesCellArray'][iAOI, 0][:, 0]
     interval_traces = np.expand_dims(interval_traces, 3)
     interval_traces = xr.DataArray(interval_traces,
-                             dims=('AOI', 'time', 'channel'),
-                             coords={'AOI': range(intensity.shape[0]),
-                                     'channel': [channel]})
+                                   dims=('AOI', 'time', 'channel'),
+                                   coords={'AOI': range(data.intensity.shape[0]),
+                                           'channel': [channel]})
+    data['interval_traces'] = interval_traces
 
-    return interval_traces
+
+    return data
 
 
