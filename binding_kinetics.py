@@ -2,7 +2,6 @@ import xarray as xr
 import numpy as np
 
 
-
 def remove_multiple_DNA(data, DNA_channel):
     def find_state_with_lowest_intensity():
         DNA_viterbi_intensity = data['viterbi_path'].sel(state='position', channel=DNA_channel)
@@ -53,5 +52,9 @@ def remove_multiple_DNA(data, DNA_channel):
     nStates = get_number_of_states()
     all_tethers_set = set(data.AOI.values)
     badTethers = remove_more_than_two_states()
-    remove_two_state_with_lowest_not_equal_to_zero(badTethers=badTethers)
-    return 0
+    badTethers = remove_two_state_with_lowest_not_equal_to_zero(badTethers=badTethers)
+    good_tethers = all_tethers_set - badTethers
+    selected_data = data.sel(AOI=list(good_tethers))
+    return selected_data
+
+
