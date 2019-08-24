@@ -15,7 +15,10 @@ def import_everything(filestr):
 
 
 def def_data_path():
-    datapath = Path('D:/matlab_CoSMoS/data/')
+    with open('pathconfig.txt', 'r') as pathconfig:
+        path = pathconfig.readline()
+    path = path[:-1]
+    datapath = Path(path)
     return datapath
 
 
@@ -112,3 +115,4 @@ def load_data_from_netcdf(path):
     data = xr.open_dataset(path)
     data.attrs['datapath'] = Path(data.datapath)
     data.attrs['image_path'] = Path(data.image_path)
+    return data
