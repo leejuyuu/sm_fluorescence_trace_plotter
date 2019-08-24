@@ -100,3 +100,15 @@ def import_viterbi_paths(data):
                                         'state': ['position', 'label']})
     data['viterbi_path'] = viterbi_path
     return data
+
+
+def save_data_to_netcdf(path, data):
+    data.attrs['datapath'] = str(data.datapath)
+    data.attrs['image_path'] = str(data.image_path)
+    data.to_netcdf(path)
+    return 0
+
+def load_data_from_netcdf(path):
+    data = xr.open_dataset(path)
+    data.attrs['datapath'] = Path(data.datapath)
+    data.attrs['image_path'] = Path(data.image_path)
