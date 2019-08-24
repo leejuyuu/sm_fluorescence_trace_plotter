@@ -15,10 +15,11 @@ def import_everything(filestr):
 
 
 def def_data_path():
-    with open('pathconfig.txt', 'r') as pathconfig:
-        path = pathconfig.readline()
-    path = path[:-1]
-    datapath = Path(path)
+    # with open('pathconfig.txt', 'r') as pathconfig:
+    #     path = pathconfig.readline()
+    # path = path[:-1]
+    # datapath = Path(path)
+    datapath = Path('D:/matlab_CoSMoS/data/')
     return datapath
 
 
