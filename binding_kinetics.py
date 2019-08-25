@@ -72,12 +72,12 @@ def match_vit_path_to_intervals(data, DNA_channel):
     return 0
 
 
-def find_state_change_point(state_sequence):
+def find_state_start_point(state_sequence):
     change_array = state_sequence.diff(dim='time')
-    state_start_index = list(np.nonzero(change_array.values)[0])
-
-
-
+    state_start_index = np.nonzero(change_array.values)[0]
     return state_start_index
+
+
+
 
 
