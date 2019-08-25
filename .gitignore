@@ -6,3 +6,5 @@
 .idea/workspace.xml
 
 venv/
+
+__pycache__/
