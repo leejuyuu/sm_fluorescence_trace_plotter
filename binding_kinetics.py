@@ -59,16 +59,10 @@ def remove_multiple_DNA(data, DNA_channel):
 
 
 def match_vit_path_to_intervals(data, DNA_channel):
-
-
-
     state_sequence = data['viterbi_path'].sel(state='label', channel=DNA_channel, AOI=1)
     state_start_index = find_state_end_point(state_sequence)
-    assign_event_time(state_sequence, state_start_index)
-
-
-
-
+    event_time = assign_event_time(state_sequence, state_start_index)
+    set_up_intervals(data.time, event_time)
 
     return 0
 
@@ -90,6 +84,24 @@ def assign_event_time(state_sequence, state_end_index):
         event_time[i+1] = (time_for_each_frame[i_end_index] +
                            time_for_each_frame[i_end_index+1])/2
     return event_time
+
+
+def set_up_intervals(time_coord, event_time):
+    intervals = xr.Dataset({'indices': (['interval_number'], np.zeros((len(event_time)-1),
+                                                                      dtype=object))},
+                           coords={'interval_number': range(len(event_time)-1)})
+    intervals['duration'] = xr.DataArray(np.diff(event_time),
+                                         dims='interval_number',
+                                         coords={'interval_number': intervals.interval_number})
+    for i in range(len(intervals.interval_number)):
+        intervals['indices'].loc[i] = tuple(time_coord[(event_time[i] <= time_coord)
+                                                       & (time_coord <= event_time[i+1])].values)
+    return intervals
+
+
+
+
+
 
 
 
