@@ -61,9 +61,10 @@ def remove_multiple_DNA(data, DNA_channel):
 def match_vit_path_to_intervals(data, DNA_channel):
 
 
-    match_vit_path_to_intervals.find_state_change_point = find_state_change_point
+
     state_sequence = data['viterbi_path'].sel(state='label', channel=DNA_channel, AOI=1)
-    find_state_change_point(state_sequence)
+    state_start_index = find_state_end_point(state_sequence)
+    assign_event_time(state_sequence, state_start_index)
 
 
 
@@ -72,11 +73,23 @@ def match_vit_path_to_intervals(data, DNA_channel):
     return 0
 
 
-def find_state_start_point(state_sequence):
+def find_state_end_point(state_sequence):
     change_array = state_sequence.diff(dim='time')
     state_start_index = np.nonzero(change_array.values)[0]
     return state_start_index
 
+
+def assign_event_time(state_sequence, state_end_index):
+    time_for_each_frame = state_sequence.time
+    event_time = np.zeros((len(state_end_index) + 2))
+    event_time[0] = time_for_each_frame[0]
+    event_time[-1] = time_for_each_frame[-1]
+    # Assign the time point for events as the mid-point between two points that have different
+    # state labels
+    for i, i_end_index in enumerate(state_end_index):
+        event_time[i+1] = (time_for_each_frame[i_end_index] +
+                           time_for_each_frame[i_end_index+1])/2
+    return event_time
 
 
 
