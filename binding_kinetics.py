@@ -34,11 +34,11 @@ def remove_multiple_DNA(data, DNA_channel):
         for iAOI in good_tethers:
             if nStates.loc[iAOI] != 2:
                 continue
-            bool_lowest_state = data['viterbi_path'].sel(state='label', channel=DNA_channel, AOI=iAOI)\
-                == lowest_state_label.loc[iAOI]
+            bool_lowest_state = data['viterbi_path'].sel(state='label', channel=DNA_channel, AOI=iAOI) \
+                                == lowest_state_label.loc[iAOI]
 
             lowest_state_std = np.std(data['intensity'].sel(
-                                     channel=DNA_channel, AOI=iAOI)[bool_lowest_state])
+                channel=DNA_channel, AOI=iAOI)[bool_lowest_state])
             lowest_state_mean = np.mean(data['viterbi_path'].sel(state='position',
                                                                  channel=DNA_channel,
                                                                  AOI=iAOI)[bool_lowest_state])
@@ -56,5 +56,28 @@ def remove_multiple_DNA(data, DNA_channel):
     good_tethers = all_tethers_set - badTethers
     selected_data = data.sel(AOI=list(good_tethers))
     return selected_data
+
+
+def match_vit_path_to_intervals(data, DNA_channel):
+
+
+    match_vit_path_to_intervals.find_state_change_point = find_state_change_point
+    state_sequence = data['viterbi_path'].sel(state='label', channel=DNA_channel, AOI=1)
+    find_state_change_point(state_sequence)
+
+
+
+
+
+    return 0
+
+
+def find_state_change_point(state_sequence):
+    change_array = state_sequence.diff(dim='time')
+    state_start_index = list(np.nonzero(change_array.values)[0])
+
+
+
+    return state_start_index
 
 
