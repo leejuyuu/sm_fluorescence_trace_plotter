@@ -60,6 +60,13 @@ def collect_channel_state_info(channel_data):
     channel_data['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
     return channel_data
 
+def collect_all_channel_state_info(data):
+    channel_data_list = []
+    for i_channel in data.channel:
+        channel_data_list.append(collect_channel_state_info(data.sel(channel=i_channel)))
+    data_out = xr.concat(channel_data_list, dim='channel')
+    return data_out
+
 def list_multiple_DNA(channel_data):
     badTethers = remove_more_than_two_states(channel_data.nStates)
     badTethers = remove_two_state_with_lowest_not_equal_to_zero(channel_data,
@@ -85,19 +92,24 @@ def split_data_set_by_specifying_aoi_subset(data, aoi_subset):
 def match_vit_path_to_intervals(channel_data):
     channel_data = collect_channel_state_info(channel_data)
     bad_aoi_list = []
+    intervals_list = []
     for iAOI in channel_data.AOI:
         # print(iAOI)
         state_sequence = channel_data['viterbi_path'].sel(state='label', AOI=iAOI)
         state_start_index = find_state_end_point(state_sequence)
         event_time = assign_event_time(state_sequence, state_start_index)
-        intervals = set_up_intervals(channel_data.time, event_time)
-        intervals = assign_state_number_to_intervals(channel_data.sel(AOI=iAOI), intervals)
-        if find_any_bad_intervals(channel_data.sel(AOI=iAOI), intervals):
+        i_intervals = set_up_intervals(iAOI, event_time)
+        i_intervals = assign_state_number_to_intervals(channel_data.sel(AOI=iAOI), i_intervals)
+        intervals_list.append(i_intervals)
+        if find_any_bad_intervals(channel_data.sel(AOI=iAOI), i_intervals):
             bad_aoi_list.append(int(iAOI.values))
     print(bad_aoi_list)
     bad_aoi_set = set(bad_aoi_list)
+    intervals = xr.concat(intervals_list, dim='AOI')
+    intervals = intervals.assign_coords(AOI=channel_data.AOI)
 
-    return bad_aoi_set
+
+    return bad_aoi_set, intervals
 
 
 def find_state_end_point(state_sequence):
@@ -119,10 +131,10 @@ def assign_event_time(state_sequence, state_end_index):
     return event_time
 
 
-def set_up_intervals(time_coord, event_time):
-    intervals = xr.Dataset({'indices': (['interval_number'], np.zeros((len(event_time)-1),
-                                                                      dtype=object))},
-                           coords={'interval_number': range(len(event_time)-1)})
+def set_up_intervals(iAOI, event_time):
+    intervals = xr.Dataset({'duration': (['AOI', 'interval_number'], np.zeros((1, len(event_time)-1)))},
+                           coords={'interval_number': range(len(event_time)-1)
+                                   })
     intervals['duration'] = xr.DataArray(np.diff(event_time),
                                          dims='interval_number',
                                          coords={'interval_number': intervals.interval_number})
@@ -172,6 +184,22 @@ def find_any_bad_intervals(AOI_data, intervals):
 
             break
     return out
+
+
+def group_analyzable_aois_into_state_number(data, intervals):
+    # plus zero (baseline)
+    data['nStates'] = get_number_of_states(data.sel(channel=intervals.channel))
+
+    max_state = data.nStates.max() + 1
+    data_dict = {}
+    intervals_dict = {}
+    for i_state in range(int(intervals['state_number'].max())+1):
+        index = intervals['state_number'].max(dim='interval_number') == i_state
+        data_dict[i_state] = data.where(index, drop=True)
+        intervals_dict[i_state] = intervals.where(index, drop=True)
+
+    return data_dict, intervals_dict
+
 
 
 
