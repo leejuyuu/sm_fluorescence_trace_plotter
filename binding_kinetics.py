@@ -69,16 +69,16 @@ def remove_multiple_DNA(data, DNA_channel):
 def match_vit_path_to_intervals(data, DNA_channel):
     bad_aoi_list = []
     for iAOI in data.AOI:
-        print(iAOI)
+        # print(iAOI)
         state_sequence = data['viterbi_path'].sel(state='label', channel='green', AOI=iAOI)
         state_start_index = find_state_end_point(state_sequence)
         event_time = assign_event_time(state_sequence, state_start_index)
         intervals = set_up_intervals(data.time, event_time)
         intervals = assign_state_number_to_intervals(data.sel(AOI=iAOI), intervals)
         if find_any_bad_intervals(data.sel(AOI=iAOI), intervals):
-            bad_aoi_list.append(iAOI.values)
+            bad_aoi_list.append(int(iAOI.values))
     print(bad_aoi_list)
-    return 0
+    return bad_aoi_list
 
 
 def find_state_end_point(state_sequence):
@@ -148,8 +148,11 @@ def find_any_bad_intervals(AOI_data, intervals):
         chunk_of_interval_traces = AOI_data['interval_traces'].sel(time=interval_slice,
                                                                    channel='green')
         if (intervals['state_number'].loc[i] != 0) & \
-                (sum(chunk_of_interval_traces) < 0.9*len(chunk_of_interval_traces)):
+                (sum(chunk_of_interval_traces % 2 != 0) < 0.8*len(chunk_of_interval_traces)):
+            print(sum(chunk_of_interval_traces % 2 != 0))
+            print(len(chunk_of_interval_traces))
             out = True
+
             break
     return out
 
