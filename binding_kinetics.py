@@ -60,20 +60,27 @@ def collect_channel_state_info(channel_data):
     channel_data['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
     return channel_data
 
-def unlist_multiple_DNA(channel_data):
-
-    all_tethers_set = set(channel_data.AOI.values)
+def list_multiple_DNA(channel_data):
     badTethers = remove_more_than_two_states(channel_data.nStates)
     badTethers = remove_two_state_with_lowest_not_equal_to_zero(channel_data,
                                                                 channel_data.nStates,
                                                                 channel_data.bool_lowest_state_equal_to_zero,
                                                                 badTethers=badTethers)
-    good_tethers = all_tethers_set - badTethers
-    return good_tethers
+    return badTethers
 
 def remove_multiple_DNA_from_dataset(data, good_tethers):
     selected_data = data.sel(AOI=list(good_tethers))
     return selected_data
+
+
+def split_data_set_by_specifying_aoi_subset(data, aoi_subset):
+    whole_aoi_set = set(data.AOI.values)
+    complement_subset = whole_aoi_set - aoi_subset
+    data_subset = data.sel(AOI=list(aoi_subset))
+    data_complement = data.sel(AOI=list(complement_subset))
+    return data_subset, data_complement
+
+
 
 def match_vit_path_to_intervals(channel_data):
     channel_data = collect_channel_state_info(channel_data)
@@ -88,7 +95,9 @@ def match_vit_path_to_intervals(channel_data):
         if find_any_bad_intervals(channel_data.sel(AOI=iAOI), intervals):
             bad_aoi_list.append(int(iAOI.values))
     print(bad_aoi_list)
-    return bad_aoi_list
+    bad_aoi_set = set(bad_aoi_list)
+
+    return bad_aoi_set
 
 
 def find_state_end_point(state_sequence):
