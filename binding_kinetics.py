@@ -3,68 +3,77 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def remove_multiple_DNA(data, DNA_channel):
-    def find_state_with_lowest_intensity():
-        DNA_viterbi_intensity = data['viterbi_path'].sel(state='position', channel=DNA_channel)
-        lowest_intensity = DNA_viterbi_intensity.min(dim='time')
-        bool_lowest = (DNA_viterbi_intensity == lowest_intensity)
-        DNA_viterbi_state_label = data['viterbi_path'].sel(state='label', channel=DNA_channel)
-        selected_state_label = xr.DataArray(np.zeros(lowest_intensity.shape),
-                                            dims='AOI',
-                                            coords={'AOI': data.AOI})
-        for iAOI in DNA_viterbi_state_label.AOI.values:
-            bool_selected_time = bool_lowest.sel(AOI=iAOI)
-            all_low_state_label_array = DNA_viterbi_state_label.sel(AOI=iAOI)[bool_selected_time]
-            distinct_state_labels = set(all_low_state_label_array.values)
-            if len(distinct_state_labels) == 1:
-                selected_state_label.loc[iAOI] = list(distinct_state_labels)[0]
-        return selected_state_label
+def find_state_with_lowest_intensity(channel_data):
+    DNA_viterbi_intensity = channel_data['viterbi_path'].sel(state='position')
+    lowest_intensity = DNA_viterbi_intensity.min(dim='time')
+    bool_lowest = (DNA_viterbi_intensity == lowest_intensity)
+    DNA_viterbi_state_label = channel_data['viterbi_path'].sel(state='label')
+    selected_state_label = xr.DataArray(np.zeros(lowest_intensity.shape),
+                                        dims='AOI',
+                                        coords={'AOI': channel_data.AOI})
+    for iAOI in DNA_viterbi_state_label.AOI.values:
+        bool_selected_time = bool_lowest.sel(AOI=iAOI)
+        all_low_state_label_array = DNA_viterbi_state_label.sel(AOI=iAOI)[bool_selected_time]
+        distinct_state_labels = set(all_low_state_label_array.values)
+        if len(distinct_state_labels) == 1:
+            selected_state_label.loc[iAOI] = list(distinct_state_labels)[0]
+    return selected_state_label
 
-    def get_number_of_states():
-        DNA_viterbi_state_label = data['viterbi_path'].sel(state='label', channel=DNA_channel)
-        nStates = DNA_viterbi_state_label.max(dim='time')
-        return nStates
+def check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label):
+    bool_lowest_state_equal_to_zero = xr.DataArray(np.zeros(len(channel_data.AOI)),
+                                                   dims='AOI',
+                                                   coords={'AOI': channel_data.AOI})
+    for iAOI in channel_data.AOI:
+        bool_lowest_state = channel_data['viterbi_path'].sel(state='label', AOI=iAOI) \
+                            == lowest_state_label.loc[iAOI]
+        lowest_state_std = np.std(channel_data['intensity'].sel(AOI=iAOI)[bool_lowest_state])
+        lowest_state_mean = np.mean(channel_data['viterbi_path'].sel(state='position',
+                                                                     AOI=iAOI)[bool_lowest_state])
+        bool_lowest_state_equal_to_zero.loc[iAOI] = abs(lowest_state_mean) < 2*lowest_state_std
+    return bool_lowest_state_equal_to_zero
 
-    def remove_more_than_two_states():
-        badTethers = set(np.where(nStates>2)[0] + 1)
-        return badTethers
 
-    def check_if_lowest_state_equal_to_zero():
-        bool_lowest_state_equal_to_zero = xr.DataArray(np.zeros(len(data.AOI)),
-                                                       dims='AOI',
-                                                       coords={'AOI': data.AOI})
-        for iAOI in data.AOI:
-            bool_lowest_state = data['viterbi_path'].sel(state='label', channel=DNA_channel, AOI=iAOI) \
-                                == lowest_state_label.loc[iAOI]
-            lowest_state_std = np.std(data['intensity'].sel(
-                channel=DNA_channel, AOI=iAOI)[bool_lowest_state])
-            lowest_state_mean = np.mean(data['viterbi_path'].sel(state='position',
-                                                                 channel=DNA_channel,
-                                                                 AOI=iAOI)[bool_lowest_state])
-            bool_lowest_state_equal_to_zero.loc[iAOI] = abs(lowest_state_mean) < 2*lowest_state_std
-        return bool_lowest_state_equal_to_zero
+def get_number_of_states(channel_data):
+    DNA_viterbi_state_label = channel_data['viterbi_path'].sel(state='label')
+    nStates = DNA_viterbi_state_label.max(dim='time')
+    return nStates
 
-    def remove_two_state_with_lowest_not_equal_to_zero(badTethers=set()):
-        bad_tether_condition = (nStates != 2) \
-                               & xr.ufuncs.logical_not(bool_lowest_state_equal_to_zero)
-        new_bad_tether_set = set(data.AOI[bad_tether_condition].values)
-        badTethers = badTethers | new_bad_tether_set
-        return badTethers
+def remove_more_than_two_states(nStates):
+    # np returns zero index so plus 1
+    badTethers = set(np.where(nStates>2)[0] + 1)
+    return badTethers
 
-    lowest_state_label = find_state_with_lowest_intensity()
-    bool_lowest_state_equal_to_zero = check_if_lowest_state_equal_to_zero()
-    nStates = get_number_of_states()
-    data['lowest_state_label'] = lowest_state_label
-    data['nStates'] = nStates
-    data['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
+def remove_two_state_with_lowest_not_equal_to_zero(channel_data, nStates, bool_lowest_state_equal_to_zero, badTethers=set()):
+    bad_tether_condition = (nStates != 2) \
+                           & xr.ufuncs.logical_not(bool_lowest_state_equal_to_zero)
+    new_bad_tether_set = set(channel_data.AOI[bad_tether_condition].values)
+    badTethers = badTethers | new_bad_tether_set
+    return badTethers
 
-    all_tethers_set = set(data.AOI.values)
-    badTethers = remove_more_than_two_states()
-    badTethers = remove_two_state_with_lowest_not_equal_to_zero(badTethers=badTethers)
+
+def collect_channel_state_info(channel_data):
+    lowest_state_label = find_state_with_lowest_intensity(channel_data)
+    bool_lowest_state_equal_to_zero = check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label)
+    nStates = get_number_of_states(channel_data)
+    channel_data['lowest_state_label'] = lowest_state_label
+    channel_data['nStates'] = nStates
+    channel_data['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
+    return channel_data
+
+def unlist_multiple_DNA(channel_data):
+
+    all_tethers_set = set(channel_data.AOI.values)
+    badTethers = remove_more_than_two_states(channel_data.nStates)
+    badTethers = remove_two_state_with_lowest_not_equal_to_zero(channel_data,
+                                                                channel_data.nStates,
+                                                                channel_data.bool_lowest_state_equal_to_zero,
+                                                                badTethers=badTethers)
     good_tethers = all_tethers_set - badTethers
+    return good_tethers
+
+def remove_multiple_DNA_from_dataset(data, good_tethers):
     selected_data = data.sel(AOI=list(good_tethers))
     return selected_data
-
 
 def match_vit_path_to_intervals(data, DNA_channel):
     bad_aoi_list = []
