@@ -10,7 +10,7 @@ DNA_channel_data = binding_kinetics.collect_channel_state_info(data.sel(channel=
 good_tethers = binding_kinetics.unlist_multiple_DNA(DNA_channel_data)
 selected_data = binding_kinetics.remove_multiple_DNA_from_dataset(data, good_tethers)
 
-bad_aoi_list = binding_kinetics.match_vit_path_to_intervals(selected_data, 'red')
+bad_aoi_list = binding_kinetics.match_vit_path_to_intervals(selected_data.sel(channel=protein_channel))
 
 123
 

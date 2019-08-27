@@ -75,16 +75,17 @@ def remove_multiple_DNA_from_dataset(data, good_tethers):
     selected_data = data.sel(AOI=list(good_tethers))
     return selected_data
 
-def match_vit_path_to_intervals(data, DNA_channel):
+def match_vit_path_to_intervals(channel_data):
+    channel_data = collect_channel_state_info(channel_data)
     bad_aoi_list = []
-    for iAOI in data.AOI:
+    for iAOI in channel_data.AOI:
         # print(iAOI)
-        state_sequence = data['viterbi_path'].sel(state='label', channel='green', AOI=iAOI)
+        state_sequence = channel_data['viterbi_path'].sel(state='label', AOI=iAOI)
         state_start_index = find_state_end_point(state_sequence)
         event_time = assign_event_time(state_sequence, state_start_index)
-        intervals = set_up_intervals(data.time, event_time)
-        intervals = assign_state_number_to_intervals(data.sel(AOI=iAOI), intervals)
-        if find_any_bad_intervals(data.sel(AOI=iAOI), intervals):
+        intervals = set_up_intervals(channel_data.time, event_time)
+        intervals = assign_state_number_to_intervals(channel_data.sel(AOI=iAOI), intervals)
+        if find_any_bad_intervals(channel_data.sel(AOI=iAOI), intervals):
             bad_aoi_list.append(int(iAOI.values))
     print(bad_aoi_list)
     return bad_aoi_list
@@ -124,7 +125,7 @@ def set_up_intervals(time_coord, event_time):
 def shift_state_number(AOI_data):
     if AOI_data['bool_lowest_state_equal_to_zero']:
         if AOI_data['lowest_state_label'] == 1:
-            AOI_data['viterbi_path'].loc[:, 'label', 'green'] = AOI_data['viterbi_path'].loc[:, 'label', 'green']-1
+            AOI_data['viterbi_path'].loc[:, 'label'] = AOI_data['viterbi_path'].loc[:, 'label']-1
         else:
             raise ValueError('shift_state_number:\nlowest state not equal to 1')
     return AOI_data
@@ -139,7 +140,6 @@ def assign_state_number_to_intervals(AOI_data, intervals):
     for i in intervals['interval_number']:
         interval_slice = slice(intervals['start'].loc[i], intervals['end'].loc[i])
         distinct_state_numbers = set(AOI_data['viterbi_path'].sel(state='label',
-                                                                  channel='green',
                                                                   time=interval_slice).values)
         if len(distinct_state_numbers) == 1:
             intervals_state_number.loc[i] = list(distinct_state_numbers)[0]
@@ -154,10 +154,9 @@ def find_any_bad_intervals(AOI_data, intervals):
     out = False
     for i in intervals['interval_number']:
         interval_slice = slice(intervals['start'].loc[i], intervals['end'].loc[i])
-        chunk_of_interval_traces = AOI_data['interval_traces'].sel(time=interval_slice,
-                                                                   channel='green')
+        chunk_of_interval_traces = AOI_data['interval_traces'].sel(time=interval_slice)
         if (intervals['state_number'].loc[i] != 0) & \
-                (sum(chunk_of_interval_traces % 2 != 0) < 0.8*len(chunk_of_interval_traces)):
+                (sum(chunk_of_interval_traces % 2 != 0) < 0.9*len(chunk_of_interval_traces)):
             print(sum(chunk_of_interval_traces % 2 != 0))
             print(len(chunk_of_interval_traces))
             out = True
