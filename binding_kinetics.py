@@ -201,6 +201,30 @@ def group_analyzable_aois_into_state_number(data, intervals):
     return data_dict, intervals_dict
 
 
+def extract_dwell_time(intervals_list, selection, state):
+    # selection = 1 for end, -1 for start, 0 for intermediate
+    out_list = []
+    for i_file_intervals in intervals_list:
+        for iAOI in i_file_intervals.AOI:
+            i_AOI_intervals = i_file_intervals.sel(AOI=iAOI)
+            valid_intervals = i_AOI_intervals.where(
+                xr.ufuncs.logical_not(xr.ufuncs.isnan(i_AOI_intervals.duration)),
+                drop=True)
+            selected_intervals = valid_intervals.isel(interval_number=slice(1, -1))
+            i_dwell = selected_intervals['duration'].where(selected_intervals.state_number == state,
+                                                           drop=True)
+            out_list.append(i_dwell.values)
+
+
+    out = np.concatenate(tuple(out_list))
+
+
+    return out
+
+def intensity_from_intervals(data, intervals):
+    
+
+
 
 
 
