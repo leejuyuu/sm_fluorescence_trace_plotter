@@ -1,6 +1,6 @@
 import xarray as xr
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 
 def find_state_with_lowest_intensity(channel_data):
@@ -98,7 +98,7 @@ def match_vit_path_to_intervals(channel_data):
         state_sequence = channel_data['viterbi_path'].sel(state='label', AOI=iAOI)
         state_start_index = find_state_end_point(state_sequence)
         event_time = assign_event_time(state_sequence, state_start_index)
-        i_intervals = set_up_intervals(iAOI, event_time)
+        i_intervals = set_up_intervals(event_time)
         i_intervals = assign_state_number_to_intervals(channel_data.sel(AOI=iAOI), i_intervals)
         intervals_list.append(i_intervals)
         if find_any_bad_intervals(channel_data.sel(AOI=iAOI), i_intervals):
@@ -131,7 +131,7 @@ def assign_event_time(state_sequence, state_end_index):
     return event_time
 
 
-def set_up_intervals(iAOI, event_time):
+def set_up_intervals(event_time):
     intervals = xr.Dataset({'duration': (['AOI', 'interval_number'], np.zeros((1, len(event_time)-1)))},
                            coords={'interval_number': range(len(event_time)-1)
                                    })
@@ -176,12 +176,10 @@ def find_any_bad_intervals(AOI_data, intervals):
     for i in intervals['interval_number']:
         interval_slice = slice(intervals['start'].loc[i], intervals['end'].loc[i])
         chunk_of_interval_traces = AOI_data['interval_traces'].sel(time=interval_slice)
-        if (intervals['state_number'].loc[i] != 0) & \
-                (sum(chunk_of_interval_traces % 2 != 0) < 0.9*len(chunk_of_interval_traces)):
-            print(sum(chunk_of_interval_traces % 2 != 0))
-            print(len(chunk_of_interval_traces))
+        if (intervals['state_number'].loc[i] != 0) and \
+                (np.count_nonzero(chunk_of_interval_traces.values % 2 != 0) \
+                 < 0.9*len(chunk_of_interval_traces)):
             out = True
-
             break
     return out
 
@@ -222,14 +220,5 @@ def extract_dwell_time(intervals_list, selection, state):
     return out
 
 def intensity_from_intervals(data, intervals):
+    return 0
     
-
-
-
-
-
-
-
-
-
-
