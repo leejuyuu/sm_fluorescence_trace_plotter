@@ -8,3 +8,7 @@
 venv/
 
 __pycache__/
+
+*.png
+
+*.csv
