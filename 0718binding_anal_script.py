@@ -28,9 +28,10 @@ for iFile in range(0, nFiles):
 
     bad_intervals, good_intervals = binding_kinetics.split_data_set_by_specifying_aoi_subset(intervals, bad_aoi_set)
     good_intervals.to_netcdf(datapath / (filestr + '_gintervals.nc'))
-    selected_data['datapath'] = str(selected_data.datapath)
-    selected_data['image_path'] = str(selected_data.image_path)
+    selected_data.attrs['datapath'] = str(selected_data.datapath)
+    selected_data.attrs['image_path'] = str(selected_data.image_path)
     selected_data.to_netcdf(datapath / (filestr + '_gdata.nc'))
+    print(filestr + ' finished')
 
 
 123
