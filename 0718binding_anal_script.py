@@ -5,14 +5,14 @@ import pandas as pd
 import os
 DNA_channel = 'red'
 protein_channel = 'green'
-
-xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190718/20190718parameterFile.xlsx')
+datapath = imscrollIO.def_data_path()
+xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190731/20190731parameterFile.xlsx')
 dfs = pd.read_excel(xlspath)
 nFiles = dfs.shape[0]
 for iFile in range(0, nFiles):
     out = {}
     filestr = dfs.filename[iFile]
-    datapath = Path('D:/matlab_CoSMoS/data/')
+
     path = datapath / (filestr + '_data.nc')
     # path = Path('/mnt/linuxData/Google_drive_leejuyuu/Research/anal_dataset/L2_02_01_data.nc')
     data = imscrollIO.load_data_from_netcdf(path)

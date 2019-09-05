@@ -8,14 +8,15 @@ import math
 from scipy import optimize
 from matplotlib import pyplot as plt
 
-xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190718/20190718parameterFile.xlsx')
+datapath = imscrollIO.def_data_path()
+xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190731/20190731parameterFile.xlsx')
 dfs = pd.read_excel(xlspath)
 nFiles = dfs.shape[0]
 state_1_intervals_list = []
 for iFile in range(0, nFiles):
     out = {}
     filestr = dfs.filename[iFile]
-    datapath = Path('D:/matlab_CoSMoS/data/')
+
     gdata_path = datapath / (filestr + '_data.nc')
     gintervals_path = datapath / (filestr + '_gintervals.nc')
 

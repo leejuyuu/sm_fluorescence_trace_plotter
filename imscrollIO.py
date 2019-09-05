@@ -2,10 +2,11 @@ import scipy.io as sio
 import numpy as np
 from pathlib import Path
 import xarray as xr
+from tkinter import Tk, filedialog
 
 
-def import_everything(filestr):
-    datapath = def_data_path()
+def import_everything(filestr, datapath):
+
     data = initialize_data_from_intensity_traces(datapath, filestr)
     data = import_image_path_from_driftfit(data)
     data = import_time_stamps(data)
@@ -19,7 +20,10 @@ def def_data_path():
     #     path = pathconfig.readline()
     # path = path[:-1]
     # datapath = Path(path)
-    datapath = Path('D:/matlab_CoSMoS/data/')
+    root = Tk()
+    data_dir_str = filedialog.askdirectory()
+    root.destroy()
+    datapath = Path(data_dir_str)
     return datapath
 
 
