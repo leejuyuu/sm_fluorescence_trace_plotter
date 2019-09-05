@@ -7,6 +7,7 @@ import numpy as np
 import math
 from scipy import optimize
 from matplotlib import pyplot as plt
+from tkinter import Tk, filedialog
 
 datapath = imscrollIO.def_data_path()
 xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190731/20190731parameterFile.xlsx')
@@ -57,9 +58,16 @@ ax = plt.gca()
 plt.text(0.65, 0.8, k_str, transform=ax.transAxes, fontsize=14)
 plt.xlim((0, 400))
 
+root = Tk()
+save_fig_path = filedialog.asksaveasfilename()
+root.destroy()
 
-plt.savefig('L4_03_high_tplot', Transparent=True,
+
+plt.savefig(save_fig_path, Transparent=True,
                    dpi=300, bbox_inches='tight')
+
+
+
 
 print(params)
 
