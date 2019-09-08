@@ -9,7 +9,7 @@ def import_everything(filestr, datapath):
 
     data = initialize_data_from_intensity_traces(datapath, filestr)
     data = import_image_path_from_driftfit(data)
-    data = import_time_stamps(data)
+    data = import_time_stamps_for_proem(data)
     data = import_interval_results(data)
     data = import_viterbi_paths(data)
     return data
@@ -27,21 +27,58 @@ def def_data_path():
     return datapath
 
 
+def import_channels_info(datapath, filestr):
+    channels_info_file_path = datapath / (filestr + '_channels.dat')
+    channels_info_file = sio.loadmat(channels_info_file_path)
+    channels_info = channels_info_file['channelsInfo']
+    channels_info_dict = dict()
+    for i in range(channels_info.shape[0]):
+        channels_info_dict[channels_info[i, 0].item()] = Path(channels_info[i, 1].item())
+
+    return channels_info_dict
+
+
+def import_time_stamps(channels_info):
+    channels_time_stamps = dict(channels_info)
+    timezeros = []
+    for channel, image_path in channels_info.items():
+        header_file_path = image_path / 'header.mat'
+        header_file = sio.loadmat(header_file_path)
+        time_stamps = header_file['vid']['ttb'][0,0].squeeze()
+        channels_time_stamps[channel] = time_stamps
+        timezeros.append(time_stamps[0])
+    starttime = min(timezeros)
+    for channel, time_stamps in channels_time_stamps.items():
+        channels_time_stamps[channel] = (time_stamps - starttime)/1000
+
+
+
+    return channels_time_stamps
+
+
 def initialize_data_from_intensity_traces(datapath, filestr):
+    channels_info = import_channels_info(datapath, filestr)
+    channels_time_stamps = import_time_stamps(channels_info)
+
     intensity_file_path = datapath / (filestr + '_traces.dat')
     traces_file = sio.loadmat(intensity_file_path)
-    array_shape = traces_file['traces']['green'][0, 0].shape
-    intensity = np.stack((traces_file['traces']['green'][0, 0],
-                          traces_file['traces']['red'][0, 0]),
-                         -1)
-    intensity = xr.DataArray(intensity,
-                             dims=('AOI', 'time', 'channel'),
-                             coords={'AOI': range(1, array_shape[0]+1),
-                                     'channel': ['green', 'red']})
-    data = xr.Dataset({'intensity': (['AOI', 'time', 'channel'], intensity)},
+    channels = traces_file['traces'].dtype.names
+    list_of_intensity_arrays = []
+    nAOI = traces_file['traces'][channels[0]][0, 0].shape[0]
+    for i_channel in channels:
+        i_intensity = xr.DataArray(traces_file['traces'][i_channel][0, 0],
+                             dims=('AOI', 'time'),
+                             coords={'AOI': range(1, nAOI+1),
+                                     'time': channels_time_stamps[i_channel]})
+        list_of_intensity_arrays.append(i_intensity)
+
+
+    intensity = xr.concat(list_of_intensity_arrays, dim='channel')
+
+    data = xr.Dataset({'intensity': (['channel', 'AOI', 'time'], intensity)},
                       coords={'AOI': intensity.AOI,
                               'time': intensity.time,
-                              'channel': intensity.channel})
+                              'channel': list(channels)})
     data.attrs['datapath'] = datapath
     data.attrs['filestr'] = filestr
 
@@ -55,7 +92,7 @@ def import_image_path_from_driftfit(data):
     return data
 
 
-def import_time_stamps(data):
+def import_time_stamps_for_proem(data):
     time_stamp_txt = data.attrs['image_path'].with_suffix('.txt')
     time_data = np.loadtxt(time_stamp_txt)
     time_data[1, :] = np.cumsum(time_data[1, :])
@@ -74,10 +111,11 @@ def import_time_stamps(data):
     return data
 
 
-def import_interval_results(data, channel='green'):
+def import_interval_results(data):
     interval_file_path = data.datapath / (data.filestr + '_interval.dat')
     interval_file = sio.loadmat(interval_file_path)
-    interval_traces = np.zeros(data.intensity.shape[0:2])
+
+    interval_traces = np.zeros(data.intensity.shape)
     for iAOI in range(0, data.intensity.shape[0]):
         interval_traces[iAOI, :] = \
             interval_file['IntervalDataStructure'][0, 0]['AllTracesCellArray'][iAOI, 0][:, 0]
@@ -85,7 +123,7 @@ def import_interval_results(data, channel='green'):
     interval_traces = xr.DataArray(interval_traces,
                                    dims=('AOI', 'time', 'channel'),
                                    coords={'AOI': range(1, data.intensity.shape[0]+1),
-                                           'channel': [channel]})
+                                           'channel': []})
     data['interval_traces'] = interval_traces
     return data
 
