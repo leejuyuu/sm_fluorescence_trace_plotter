@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 from tkinter import Tk, filedialog
+import json
 
 
 def import_everything(filestr, datapath):
@@ -70,6 +71,7 @@ def initialize_data_from_intensity_traces(datapath, filestr):
                              dims=('AOI', 'time'),
                              coords={'AOI': range(1, nAOI+1),
                                      'time': channels_time_stamps[i_channel]})
+
         list_of_intensity_arrays.append(i_intensity)
 
 
@@ -79,6 +81,8 @@ def initialize_data_from_intensity_traces(datapath, filestr):
                       coords={'AOI': intensity.AOI,
                               'time': intensity.time,
                               'channel': list(channels)})
+    data = data.stack(channel_time=['channel', 'time'])
+    data = data.dropna(dim='channel_time', how='all')
     data.attrs['datapath'] = datapath
     data.attrs['filestr'] = filestr
 
@@ -114,43 +118,52 @@ def import_time_stamps_for_proem(data):
 def import_interval_results(data):
     interval_file_path = data.datapath / (data.filestr + '_interval.dat')
     interval_file = sio.loadmat(interval_file_path)
-
-    interval_traces = np.zeros(data.intensity.shape)
-    for iAOI in range(0, data.intensity.shape[0]):
-        interval_traces[iAOI, :] = \
-            interval_file['IntervalDataStructure'][0, 0]['AllTracesCellArray'][iAOI, 0][:, 0]
-    interval_traces = np.expand_dims(interval_traces, 3)
-    interval_traces = xr.DataArray(interval_traces,
-                                   dims=('AOI', 'time', 'channel'),
-                                   coords={'AOI': range(1, data.intensity.shape[0]+1),
-                                           'channel': []})
+    interval_traces_list = []
+    for i_channel in data.binder_channel:
+        i_interval_traces = np.zeros(data.intensity.sel(channel=i_channel).shape)
+        for iAOI in range(0, data.intensity.shape[0]):
+            i_interval_traces[iAOI, :] = \
+                interval_file['intervals'][i_channel][0, 0]['AllTracesCellArray'][0,0][iAOI, 0][:, 0]
+        i_interval_traces = np.expand_dims(i_interval_traces, 3)
+        i_interval_traces = xr.DataArray(i_interval_traces,
+                                       dims=('AOI', 'time', 'channel'),
+                                       coords={'AOI': range(1, data.intensity.shape[0]+1),
+                                               'time': data.time.sel(channel=i_channel),
+                                               'channel': [i_channel]})
+        i_interval_traces = i_interval_traces.stack(channel_time=['channel', 'time'])
+        interval_traces_list.append(i_interval_traces)
+    interval_traces = xr.concat(interval_traces_list, dim='channel_time')
     data['interval_traces'] = interval_traces
     return data
 
 
 def import_viterbi_paths(data):
     eb_file_path = data.datapath / (data.filestr + '_eb.dat')
-    eb_file = sio.loadmat(eb_file_path)
-    red_vit = np.zeros((len(data.AOI), len(data.time), 2))
-    green_vit = np.zeros((len(data.AOI), len(data.time), 2))
-    for iAOI in range(0, len(data.AOI)):
-        red_vit[iAOI, :, 0] = eb_file['redVit'][0, iAOI]['x'].reshape((len(data.time)))
-        red_vit[iAOI, :, 1] = eb_file['redVit'][0, iAOI]['z'].reshape((len(data.time)))
-    for iAOI in range(0, len(data.AOI)):
-        green_vit[iAOI, :, 0] = eb_file['greenVit'][0, iAOI]['x'].reshape((len(data.time)))
-        green_vit[iAOI, :, 1] = eb_file['greenVit'][0, iAOI]['z'].reshape((len(data.time)))
-    viterbi_path = np.stack((red_vit, green_vit), -1)
-    viterbi_path = xr.DataArray(viterbi_path,
-                                dims=('AOI', 'time', 'state', 'channel'),
-                                coords={'channel': ['red', 'green'],
-                                        'state': ['position', 'label']})
-    data['viterbi_path'] = viterbi_path
+    eb_file = sio.loadmat(eb_file_path)['eb_result']
+    viterbi_path_list = []
+
+    for i_channel in list(set(data.channel.values)):
+        n_frames = len(data.time.sel(channel=i_channel))
+        i_vit = np.zeros((len(data.AOI), n_frames, 2))
+        for iAOI in range(0, len(data.AOI)):
+            i_vit[iAOI, :, 0] = eb_file[i_channel][0,0]['Vit'][0,0][0, iAOI]['x'].squeeze()
+            i_vit[iAOI, :, 1] = eb_file[i_channel][0,0]['Vit'][0,0][0, iAOI]['z'].squeeze()
+        i_vit = np.expand_dims(i_vit, 4)
+        i_viterbi_path = xr.DataArray(i_vit,
+                                      dims=('AOI', 'time', 'state', 'channel'),
+                                      coords={'channel': [i_channel],
+                                        'state': ['position', 'label'],
+                                              'AOI': data.AOI,
+                                              'time': data.time.sel(channel=i_channel)})
+        i_viterbi_path = i_viterbi_path.stack(channel_time=('channel', 'time'))
+        viterbi_path_list.append(i_viterbi_path)
+    data['viterbi_path'] = xr.concat(viterbi_path_list, dim='channel_time')
     return data
 
 
 def save_data_to_netcdf(path, data):
     data.attrs['datapath'] = str(data.datapath)
-    data.attrs['image_path'] = str(data.image_path)
+    # data.attrs['image_path'] = str(data.image_path)
     data.to_netcdf(path)
     return 0
 
@@ -158,4 +171,22 @@ def load_data_from_netcdf(path):
     data = xr.open_dataset(path)
     data.attrs['datapath'] = Path(data.datapath)
     data.attrs['image_path'] = Path(data.image_path)
+    return data
+
+
+def save_data_to_json(path, data):
+    data.attrs['datapath'] = str(data.datapath)
+    data = data.reset_index('channel_time')
+    data_dict = data.to_dict()
+    with open(path, 'w') as file:
+        json.dump(data_dict, file)
+    return 0
+
+
+def load_data_from_json(path):
+    with open(path) as file:
+        data_dict = json.load(file)
+    data = xr.Dataset.from_dict(data_dict)
+    data = data.set_index(channel_time=['channel', 'time'])
+    data.attrs['datapath'] = Path(data.datapath)
     return data
