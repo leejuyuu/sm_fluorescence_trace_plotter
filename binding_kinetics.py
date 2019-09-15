@@ -242,7 +242,10 @@ def get_channel_data(data, channel):
 
 def save_all_data(all_data, AOI_categories, path):
     for key, value in all_data.items():
-        all_data[key] = value.to_dict()
+        if key == 'data':
+            all_data[key] = value.reset_index('channel_time').to_dict()
+        else:
+            all_data[key] = value.to_dict()
     collected_data = {'all_data': all_data,
            'AOI_categories': AOI_categories}
     with open(path, 'w') as file:
@@ -250,3 +253,14 @@ def save_all_data(all_data, AOI_categories, path):
     return 0
 
 
+def load_all_data(path):
+    with open(path) as file:
+        collected_data = json.load(file)
+    all_data = collected_data['all_data']
+    AOI_categories = collected_data['AOI_categories']
+    for key, item in all_data.items():
+        if key == 'data':
+            all_data[key] = xr.Dataset.from_dict(item).set_index(channel_time=('channel', 'time'))
+        else:
+            all_data[key] = xr.Dataset.from_dict(item)
+    return all_data, AOI_categories
