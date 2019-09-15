@@ -17,7 +17,11 @@ for iFile in range(0, nFiles):
     filestr = dfs.filename[iFile]
     AOI_categories = {}
 
-    data = imscrollIO.load_data_from_json(datapath / (filestr + '_data.json'))
+    try:
+        data = imscrollIO.load_data_from_json(datapath / (filestr + '_data.json'))
+    except FileNotFoundError:
+        continue
+
     state_info = binding_kinetics.collect_all_channel_state_info(data)
     DNA_channel_data = binding_kinetics.get_channel_data(data, data.target_channel)
     bad_tethers = binding_kinetics.list_multiple_DNA(DNA_channel_data,
