@@ -1,5 +1,6 @@
 import xarray as xr
 import numpy as np
+import json
 
 
 
@@ -8,7 +9,8 @@ def find_state_with_lowest_intensity(channel_data):
     lowest_intensity = DNA_viterbi_intensity.min(dim='time')
     bool_lowest = (DNA_viterbi_intensity == lowest_intensity)
     DNA_viterbi_state_label = channel_data['viterbi_path'].sel(state='label')
-    selected_state_label = xr.DataArray(np.zeros(lowest_intensity.shape),
+    # time = -1 is a temp measure to avoid populating the whole time axis when stacking
+    selected_state_label = xr.DataArray(np.zeros(len(channel_data.AOI)),
                                         dims='AOI',
                                         coords={'AOI': channel_data.AOI})
     for iAOI in DNA_viterbi_state_label.AOI.values:
@@ -36,17 +38,18 @@ def check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label):
 def get_number_of_states(channel_data):
     DNA_viterbi_state_label = channel_data['viterbi_path'].sel(state='label')
     nStates = DNA_viterbi_state_label.max(dim='time')
+
     return nStates
 
 def remove_more_than_two_states(nStates):
     # np returns zero index so plus 1
-    badTethers = set(np.where(nStates>2)[0] + 1)
+    badTethers = set((np.where(nStates>2)[0] + 1).tolist())
     return badTethers
 
 def remove_two_state_with_lowest_not_equal_to_zero(channel_data, nStates, bool_lowest_state_equal_to_zero, badTethers=set()):
     bad_tether_condition = (nStates != 2) \
                            & xr.ufuncs.logical_not(bool_lowest_state_equal_to_zero)
-    new_bad_tether_set = set(channel_data.AOI[bad_tether_condition].values)
+    new_bad_tether_set = set(channel_data.AOI[bad_tether_condition].values.tolist())
     badTethers = badTethers | new_bad_tether_set
     return badTethers
 
@@ -55,23 +58,28 @@ def collect_channel_state_info(channel_data):
     lowest_state_label = find_state_with_lowest_intensity(channel_data)
     bool_lowest_state_equal_to_zero = check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label)
     nStates = get_number_of_states(channel_data)
-    channel_data['lowest_state_label'] = lowest_state_label
-    channel_data['nStates'] = nStates
-    channel_data['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
-    return channel_data
+    channel_state_info = lowest_state_label.to_dataset(name='lowest_state_label')
+    channel_state_info['nStates'] = nStates
+    channel_state_info['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
+
+    return channel_state_info
 
 def collect_all_channel_state_info(data):
     channel_data_list = []
-    for i_channel in data.channel:
-        channel_data_list.append(collect_channel_state_info(data.sel(channel=i_channel)))
-    data_out = xr.concat(channel_data_list, dim='channel')
-    return data_out
+    for i_channel in list(set(data.channel.values)):
+        i_channel_state_info = collect_channel_state_info(get_channel_data(data, i_channel))
+        i_channel_state_info = i_channel_state_info.assign_coords(channel=i_channel)
 
-def list_multiple_DNA(channel_data):
-    badTethers = remove_more_than_two_states(channel_data.nStates)
+        channel_data_list.append(i_channel_state_info)
+    channel_state_info = xr.concat(channel_data_list, dim='channel')
+
+    return channel_state_info
+
+def list_multiple_DNA(channel_data, channel_state_info):
+    badTethers = remove_more_than_two_states(channel_state_info.nStates)
     badTethers = remove_two_state_with_lowest_not_equal_to_zero(channel_data,
-                                                                channel_data.nStates,
-                                                                channel_data.bool_lowest_state_equal_to_zero,
+                                                                channel_state_info.nStates,
+                                                                channel_state_info.bool_lowest_state_equal_to_zero,
                                                                 badTethers=badTethers)
     return badTethers
 
@@ -90,7 +98,8 @@ def split_data_set_by_specifying_aoi_subset(data, aoi_subset):
 
 
 def match_vit_path_to_intervals(channel_data):
-    channel_data = collect_channel_state_info(channel_data)
+    channel_state_info = collect_channel_state_info(channel_data)
+    channel_data = channel_data.merge(channel_state_info)
     bad_aoi_list = []
     intervals_list = []
     for iAOI in channel_data.AOI:
@@ -107,6 +116,7 @@ def match_vit_path_to_intervals(channel_data):
     bad_aoi_set = set(bad_aoi_list)
     intervals = xr.concat(intervals_list, dim='AOI')
     intervals = intervals.assign_coords(AOI=channel_data.AOI)
+    intervals = intervals.assign_coords(channel=channel_data.channel.item())
 
 
     return bad_aoi_set, intervals
@@ -146,7 +156,8 @@ def set_up_intervals(event_time):
 def shift_state_number(AOI_data):
     if AOI_data['bool_lowest_state_equal_to_zero']:
         if AOI_data['lowest_state_label'] == 1:
-            AOI_data['viterbi_path'].loc[:, 'label'] = AOI_data['viterbi_path'].loc[:, 'label']-1
+            AOI_data['viterbi_path'].loc[dict(state='label')] =\
+                AOI_data['viterbi_path'].loc[dict(state='label')]-1
         else:
             raise ValueError('shift_state_number:\nlowest state not equal to 1')
     return AOI_data
@@ -186,17 +197,17 @@ def find_any_bad_intervals(AOI_data, intervals):
 
 def group_analyzable_aois_into_state_number(data, intervals):
     # plus zero (baseline)
-    data['nStates'] = get_number_of_states(data.sel(channel=intervals.channel))
+    data['nStates'] = get_number_of_states(data.sel(channel=intervals.channel.item()))
 
     max_state = data.nStates.max() + 1
-    data_dict = {}
-    intervals_dict = {}
-    for i_state in range(int(intervals['state_number'].max())+1):
-        index = intervals['state_number'].max(dim='interval_number') == i_state
-        data_dict[i_state] = data.where(index, drop=True)
-        intervals_dict[i_state] = intervals.where(index, drop=True)
+    analyzable_tethers = {}
 
-    return data_dict, intervals_dict
+    for i_state in range(int(intervals['state_number'].max())+1):
+        i_index = intervals['state_number'].max(dim='interval_number') == i_state
+        analyzable_tethers[i_state] = i_index.AOI.where(i_index, drop=True).values.tolist()
+
+
+    return analyzable_tethers
 
 
 def extract_dwell_time(intervals_list, selection, state):
@@ -222,3 +233,20 @@ def extract_dwell_time(intervals_list, selection, state):
 def intensity_from_intervals(data, intervals):
     return 0
     
+
+def get_channel_data(data, channel):
+    channel_data = data.sel(channel=channel)
+    channel_data = channel_data.assign_coords(channel=[channel])
+    return channel_data
+
+
+def save_all_data(all_data, AOI_categories, path):
+    for key, value in all_data.items():
+        all_data[key] = value.to_dict()
+    collected_data = {'all_data': all_data,
+           'AOI_categories': AOI_categories}
+    with open(path, 'w') as file:
+        json.dump(collected_data, file)
+    return 0
+
+

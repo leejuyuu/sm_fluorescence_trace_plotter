@@ -188,5 +188,5 @@ def load_data_from_json(path):
         data_dict = json.load(file)
     data = xr.Dataset.from_dict(data_dict)
     data = data.set_index(channel_time=['channel', 'time'])
-    data.attrs['datapath'] = Path(data.datapath)
+    # data.attrs['datapath'] = Path(data.datapath)
     return data
