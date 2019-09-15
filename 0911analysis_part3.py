@@ -22,10 +22,10 @@ dfs = pd.read_excel(xlspath)
 # datapath = imscrollIO.def_data_path()
 datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
 nFiles = dfs.shape[0]
+specified_n_state = 1
 state_list = ['low', 'high']
-interval_list_dict = {}
-for item in state_list:
-    interval_list_dict[item] = []
+interval_list = []
+
 
 for iFile in range(0, nFiles):
     filestr = dfs.filename[iFile]
@@ -37,11 +37,11 @@ for iFile in range(0, nFiles):
         continue
 
     print(filestr + ' loaded')
-    for i, item in enumerate(state_list):
-        interval_list_dict[item].append(all_data['intervals'].sel(AOI=AOI_categories['analyzable'][str(i)]))
+
+    interval_list.append(all_data['intervals'].sel(AOI=AOI_categories['analyzable'][str(specified_n_state)]))
 
 for i, item in enumerate(state_list):
-    dwells = binding_kinetics.extract_dwell_time(interval_list_dict[item], 0, i)
+    dwells = binding_kinetics.extract_dwell_time(interval_list, 0, i)
     if len(dwells) == 0:
         print('no {} state found'.format(item))
         continue
@@ -75,6 +75,7 @@ for i, item in enumerate(state_list):
     root.destroy()
     plt.savefig(save_fig_path, Transparent=True,
                 dpi=300, bbox_inches='tight')
+    plt.close()
 
 
 
