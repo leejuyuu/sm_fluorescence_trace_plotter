@@ -6,25 +6,28 @@ from pathlib import Path
 import pandas as pd
 import imscrollIO
 import xarray as xr
-xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190911/20190911parameterFile.xlsx')
-dfs = pd.read_excel(xlspath)
+xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterFile.xlsx')
 datapath = imscrollIO.def_data_path()
-nFiles = dfs.shape[0]
-for iFile in range(0, nFiles):
-    filestr = dfs.filename[iFile]
+sheet_list = ['L1', 'L2', 'L3', 'L4']
+for i_sheet in sheet_list:
+    dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
 
-    data = imscrollIO.initialize_data_from_intensity_traces(datapath, filestr)
-    data.attrs['target_channel'] = 'blue'
-    data.attrs['binder_channel'] = ['green']
-    data = imscrollIO.import_interval_results(data)
-    try :
-        data = imscrollIO.import_viterbi_paths(data)
-    except:
-        print('error in {}'.format(filestr))
-        continue
+    nFiles = dfs.shape[0]
+    for iFile in range(0, nFiles):
+        filestr = dfs.filename[iFile]
 
-    imscrollIO.save_data_to_json(datapath / (filestr + '_data.json'), data)
-    
+        data = imscrollIO.initialize_data_from_intensity_traces(datapath, filestr)
+        data.attrs['target_channel'] = 'blue'
+        data.attrs['binder_channel'] = ['green']
+        data = imscrollIO.import_interval_results(data)
+        try :
+            data = imscrollIO.import_viterbi_paths(data)
+        except:
+            print('error in {}'.format(filestr))
+            continue
+
+        imscrollIO.save_data_to_json(datapath / (filestr + '_data.json'), data)
+
     #
     # nAOIs = len(data.AOI)
     #
