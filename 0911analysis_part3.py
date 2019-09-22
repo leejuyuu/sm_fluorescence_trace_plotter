@@ -16,11 +16,11 @@ from tkinter import Tk, filedialog
 def single_exponential(x, a):
     return a * np.exp(-a * x)
 
-# xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190911/20190911parameterFile.xlsx')
-xlspath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911parameterFile.xlsx')
+xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterFile.xlsx')
+# xlspath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911parameterFile.xlsx')
 dfs = pd.read_excel(xlspath)
-# datapath = imscrollIO.def_data_path()
-datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
+datapath = imscrollIO.def_data_path()
+# datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
 nFiles = dfs.shape[0]
 specified_n_state = 1
 state_list = ['low', 'high']
@@ -37,9 +37,11 @@ for iFile in range(0, nFiles):
         continue
 
     print(filestr + ' loaded')
+    if str(specified_n_state) in AOI_categories['analyzable']:
 
-    interval_list.append(all_data['intervals'].sel(AOI=AOI_categories['analyzable'][str(specified_n_state)]))
+        interval_list.append(all_data['intervals'].sel(AOI=AOI_categories['analyzable'][str(specified_n_state)]))
 
+max_time = all_data['data'].time.values.max()
 for i, item in enumerate(state_list):
     dwells = binding_kinetics.extract_dwell_time(interval_list, 0, i)
     if len(dwells) == 0:
@@ -65,10 +67,10 @@ for i, item in enumerate(state_list):
     plt.bar(centers, prob_den, width=bin_width)
     plt.xlabel('t (s)', fontsize=16)
     plt.ylabel('probability density (s$^-$$^1$)', fontsize=16)
-    k_str = 'k = {:.5f} s^-1'.format((params[0]))
+    k_str = 'k = {:.5f} s$^-$$^1$'.format((params[0]))
     ax = plt.gca()
     plt.text(0.65, 0.8, k_str, transform=ax.transAxes, fontsize=14)
-    plt.xlim((0, 400))
+    plt.xlim((0, max_time))
 
     root = Tk()
     save_fig_path = filedialog.asksaveasfilename()
