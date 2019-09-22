@@ -47,7 +47,7 @@ def remove_more_than_two_states(nStates):
     return badTethers
 
 def remove_two_state_with_lowest_not_equal_to_zero(channel_data, nStates, bool_lowest_state_equal_to_zero, badTethers=set()):
-    bad_tether_condition = (nStates != 2) \
+    bad_tether_condition = (nStates == 2) \
                            & xr.ufuncs.logical_not(bool_lowest_state_equal_to_zero)
     new_bad_tether_set = set(channel_data.AOI[bad_tether_condition].values.tolist())
     badTethers = badTethers | new_bad_tether_set
