@@ -21,12 +21,16 @@ xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterF
 
 datapath = imscrollIO.def_data_path()
 # datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
-sheet_list = ['L1', 'L2', 'L3', 'L4']
+sheet_list = ['L3']
+specified_n_state = 1
+state_list = ['low', 'high']
+on_off_str = ['on', 'off']
+obs_off_str = ['obs', 'off']
+im_format = 'svg'
 for i_sheet in sheet_list:
     dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
     nFiles = dfs.shape[0]
-    specified_n_state = 1
-    state_list = ['low', 'high']
+
     interval_list = []
 
 
@@ -68,18 +72,19 @@ for i_sheet in sheet_list:
         plt.plot(fit_x, fit_y, color='red')
         # plt.show()
         plt.bar(centers, prob_den, width=bin_width)
-        plt.xlabel('t (s)', fontsize=16)
-        plt.ylabel('probability density (s$^-$$^1$)', fontsize=16)
-        k_str = 'k = {:.5f} s$^-$$^1$'.format((params[0]))
+        plt.xlabel(r'$\tau_{{{}}}$ (s)'.format(on_off_str[i]), fontsize=16)
+        plt.ylabel('probability density (s$^{-1}$)', fontsize=16)
+        k_str = r'$k_{{{}}}$ = {:.5f} s$^{{-1}}$'.format(obs_off_str[i], params[0])
         ax = plt.gca()
-        plt.text(0.65, 0.8, k_str, transform=ax.transAxes, fontsize=14)
+        plt.text(0.55, 0.8, k_str, transform=ax.transAxes, fontsize=14)
         plt.xlim((0, max_time))
 
         # root = Tk()
         # save_fig_path = filedialog.asksaveasfilename()
         # root.destroy()
-        save_fig_path = datapath / (i_sheet+'_'+ item + '_dwell')
-        plt.savefig(save_fig_path, Transparent=True,
+        save_fig_path = datapath / (i_sheet+'_'+ item + '_dwell' + '.' + im_format)
+        # plt.show()
+        plt.savefig(save_fig_path, format=im_format, Transparent=True,
                     dpi=300, bbox_inches='tight')
         plt.close()
 
