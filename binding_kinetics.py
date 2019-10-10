@@ -52,7 +52,7 @@ def remove_two_state_with_lowest_not_equal_to_zero(channel_data, nStates, bool_l
     if badTethers is None:
         badTethers = set()
     bad_tether_condition = ((nStates == 2)
-                           & xr.ufuncs.logical_not(bool_lowest_state_equal_to_zero))
+                           & np.logical_not(bool_lowest_state_equal_to_zero))
     new_bad_tether_set = set(channel_data.AOI[bad_tether_condition].values.tolist())
     badTethers = badTethers | new_bad_tether_set
     return badTethers
@@ -220,7 +220,7 @@ def extract_dwell_time(intervals_list, selection, state):
         for iAOI in i_file_intervals.AOI:
             i_AOI_intervals = i_file_intervals.sel(AOI=iAOI)
             valid_intervals = i_AOI_intervals.where(
-                xr.ufuncs.logical_not(xr.ufuncs.isnan(i_AOI_intervals.duration)),
+               np.logical_not(np.isnan(i_AOI_intervals.duration)),
                 drop=True)
             selected_intervals = valid_intervals.isel(interval_number=slice(1, -1))
             i_dwell = selected_intervals['duration'].where(selected_intervals.state_number == state,
