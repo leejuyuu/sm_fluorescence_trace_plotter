@@ -30,7 +30,7 @@ def check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label):
         lowest_state_std = np.std(channel_data['intensity'].sel(AOI=iAOI)[bool_lowest_state])
         lowest_state_mean = np.mean(channel_data['viterbi_path'].sel(state='position',
                                                                      AOI=iAOI)[bool_lowest_state])
-        bool_lowest_state_equal_to_zero.loc[iAOI] = abs(lowest_state_mean) < 2 * lowest_state_std
+        bool_lowest_state_equal_to_zero.loc[iAOI] = abs(lowest_state_mean) <= 2 * lowest_state_std
     return bool_lowest_state_equal_to_zero
 
 
