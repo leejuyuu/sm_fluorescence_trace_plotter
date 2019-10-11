@@ -1,37 +1,43 @@
 import xarray as xr
 import numpy as np
 import json
+from collections import namedtuple
 
 
-def find_state_with_lowest_intensity(channel_data):
-    channel_viterbi_intensity = channel_data['viterbi_path'].sel(state='position')
-    channel_viterbi_state_label = channel_data['viterbi_path'].sel(state='label')
-    lowest_intensity = channel_viterbi_intensity.min(dim='time')
-    boolxr_lowest = (channel_viterbi_intensity == lowest_intensity)
-    selected_state_label = xr.DataArray(np.zeros(len(channel_data.AOI)),
-                                        dims='AOI',
-                                        coords={'AOI': channel_data.AOI})
-    for iAOI in channel_viterbi_state_label.AOI:
-        bool_selected_time = boolxr_lowest.sel(AOI=iAOI)
-        all_low_state_label_array = channel_viterbi_state_label.sel(AOI=iAOI)[bool_selected_time]
-        distinct_state_labels = set(all_low_state_label_array.values)
-        if len(distinct_state_labels) == 1:
-            selected_state_label.loc[iAOI] = list(distinct_state_labels)[0]
-    return selected_state_label
+def find_state_intensity_and_std(channel_data):
+    number_of_states_array = get_number_of_states(channel_data)
+    mean_std_pair = namedtuple('mean_std_pair', ('mean', 'std'))
+    intensity_list = []
+    for i_aoi in channel_data.AOI:
+        number_of_states = number_of_states_array.sel(AOI=i_aoi)
+        viterbi_intensity = channel_data['viterbi_path'].sel(state='position', AOI=i_aoi)
+        viterbi_state_labels = channel_data['viterbi_path'].sel(state='label', AOI=i_aoi)
+        raw_intensity_array = channel_data['intensity'].sel(AOI=i_aoi)
+        pair_list = []
+        for state_label in range(1, int(number_of_states) + 1):
+            state_intensity_array = viterbi_intensity[viterbi_state_labels == state_label]
+            unique_intensity = np.unique(state_intensity_array)
+            if len(unique_intensity) != 1:
+                raise ValueError('State intensity is not unique.')
+            state_raw_intensity = raw_intensity_array[viterbi_state_labels == state_label]
+            intensity_std = np.std(state_raw_intensity)
+            pair_list.append(mean_std_pair(unique_intensity.item(), intensity_std.item()))
+        intensity_list.append(tuple(pair_list))
+
+    return intensity_list
 
 
-def check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label):
-    bool_lowest_state_equal_to_zero = xr.DataArray(np.zeros(len(channel_data.AOI)),
-                                                   dims='AOI',
-                                                   coords={'AOI': channel_data.AOI})
-    for iAOI in channel_data.AOI:
-        bool_lowest_state = channel_data['viterbi_path'].sel(state='label', AOI=iAOI) \
-                            == lowest_state_label.loc[iAOI]
-        lowest_state_std = np.std(channel_data['intensity'].sel(AOI=iAOI)[bool_lowest_state])
-        lowest_state_mean = np.mean(channel_data['viterbi_path'].sel(state='position',
-                                                                     AOI=iAOI)[bool_lowest_state])
-        bool_lowest_state_equal_to_zero.loc[iAOI] = abs(lowest_state_mean) <= 2 * lowest_state_std
-    return bool_lowest_state_equal_to_zero
+def find_state_with_lowest_intensity(state_intensity_pairs):
+    mean_intensity_list = []
+    for state_intensity_pair in state_intensity_pairs:
+        mean_intensity_list.append(state_intensity_pair.mean)
+    lowest_state_index = np.argmin(mean_intensity_list)
+    return lowest_state_index
+
+
+def check_if_state_equal_to_zero(state_intensity):
+    is_state_equal_to_zero = abs(state_intensity.mean) <= 2 * state_intensity.std
+    return is_state_equal_to_zero
 
 
 def get_number_of_states(channel_data):
@@ -47,25 +53,30 @@ def remove_more_than_two_states(nStates):
     return badTethers
 
 
-def remove_two_state_with_lowest_not_equal_to_zero(channel_data, nStates, bool_lowest_state_equal_to_zero,
-                                                   badTethers=None):
-    if badTethers is None:
-        badTethers = set()
-    bad_tether_condition = ((nStates == 2)
-                           & np.logical_not(bool_lowest_state_equal_to_zero))
-    new_bad_tether_set = set(channel_data.AOI[bad_tether_condition].values.tolist())
-    badTethers = badTethers | new_bad_tether_set
-    return badTethers
+def remove_two_state_with_lowest_not_equal_to_zero(channel_state_info, bad_tethers=None):
+    if bad_tethers is None:
+        bad_tethers = set()
+    bad_tether_condition = ((channel_state_info.nStates == 2)
+                           & np.logical_not(channel_state_info.bool_lowest_state_equal_to_zero))
+    new_bad_tether_set = set(channel_state_info.AOI[bad_tether_condition].values.tolist())
+    bad_tethers = bad_tethers | new_bad_tether_set
+    return bad_tethers
 
 
 def collect_channel_state_info(channel_data):
-    lowest_state_label = find_state_with_lowest_intensity(channel_data)
-    bool_lowest_state_equal_to_zero = check_if_lowest_state_equal_to_zero(channel_data, lowest_state_label)
+    intensity_pair_list = find_state_intensity_and_std(channel_data)
+    lowest_state_label = []
+    is_lowest_state_equal_to_zero_list = []
+    for state_intensity_pair in intensity_pair_list:
+        lowest_state_index = find_state_with_lowest_intensity(state_intensity_pair)
+        is_lowest_state_equal_zero = check_if_state_equal_to_zero(state_intensity_pair[lowest_state_index])
+        lowest_state_label.append(lowest_state_index + 1)
+        is_lowest_state_equal_to_zero_list.append(is_lowest_state_equal_zero)
     nStates = get_number_of_states(channel_data)
-    channel_state_info = lowest_state_label.to_dataset(name='lowest_state_label')
-    channel_state_info['nStates'] = nStates
-    channel_state_info['bool_lowest_state_equal_to_zero'] = bool_lowest_state_equal_to_zero
-
+    channel_state_info = xr.Dataset({'nStates': (['AOI'], nStates),
+                                     'lowest_state_label': (['AOI'], lowest_state_label),
+                                     'bool_lowest_state_equal_to_zero': (['AOI'], is_lowest_state_equal_to_zero_list)},
+                                    coords={'AOI': nStates.AOI})
     return channel_state_info
 
 
@@ -81,18 +92,10 @@ def collect_all_channel_state_info(data):
     return channel_state_info
 
 
-def list_multiple_DNA(channel_data, channel_state_info):
-    badTethers = remove_more_than_two_states(channel_state_info.nStates)
-    badTethers = remove_two_state_with_lowest_not_equal_to_zero(channel_data,
-                                                                channel_state_info.nStates,
-                                                                channel_state_info.bool_lowest_state_equal_to_zero,
-                                                                badTethers=badTethers)
-    return badTethers
-
-
-def remove_multiple_DNA_from_dataset(data, good_tethers):
-    selected_data = data.sel(AOI=list(good_tethers))
-    return selected_data
+def list_multiple_DNA(channel_state_info):
+    bad_tethers = remove_more_than_two_states(channel_state_info.nStates)
+    bad_tethers = remove_two_state_with_lowest_not_equal_to_zero(channel_state_info, bad_tethers=bad_tethers)
+    return bad_tethers
 
 
 def split_data_set_by_specifying_aoi_subset(data, aoi_subset):

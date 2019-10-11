@@ -40,10 +40,7 @@ class Test(unittest.TestCase):
                                           'state': ['label', 'position'],
                                           'time': range(0, 50)})
         channel_state_info = bk.collect_channel_state_info(channel_data)
-        bad_aoi_set = bk.remove_two_state_with_lowest_not_equal_to_zero(channel_data,
-                                                                        channel_state_info.nStates,
-                                                                        channel_state_info.bool_lowest_state_equal_to_zero
-                                                                        )
+        bad_aoi_set = bk.remove_two_state_with_lowest_not_equal_to_zero(channel_state_info)
         self.assertEqual({1}, bad_aoi_set)
 
     def test_split_dataset(self):
