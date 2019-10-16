@@ -21,8 +21,8 @@ class Test(unittest.TestCase):
 
     def test_remove_more_than_two_states(self):
         nStates = np.arange(1, 10)
-        removed_number = bk.remove_more_than_two_states(nStates)
-        self.assertEqual(set(range(3, 10)), removed_number)
+        removed_number = bk.list_aois_more_than_two_states(nStates)
+        self.assertEqual(set(range(3, 10)), set(removed_number))
 
     def test_remove_two_state_with_lowest_not_equal_to_zero(self):
         STATES = np.repeat([1, 2, 1, 2, 1], 10)
@@ -40,8 +40,8 @@ class Test(unittest.TestCase):
                                           'state': ['label', 'position'],
                                           'time': range(0, 50)})
         channel_state_info = bk.collect_channel_state_info(channel_data)
-        bad_aoi_set = bk.remove_two_state_with_lowest_not_equal_to_zero(channel_state_info)
-        self.assertEqual({1}, bad_aoi_set)
+        bad_aoi = bk.list_aois_elevated_two_states(channel_state_info)
+        self.assertEqual({1}, set(bad_aoi))
 
     def test_split_dataset(self):
         SUBSET = {2, 5, 7, 8}
