@@ -1,11 +1,7 @@
-import scipy.io as sio
-import numpy as np
-import matplotlib.pyplot as plt
-import os
 from pathlib import Path
 import pandas as pd
 import imscrollIO
-import xarray as xr
+
 xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterFile.xlsx')
 datapath = imscrollIO.def_data_path()
 sheet_list = ['L1', 'L2', 'L3', 'L4']
@@ -20,9 +16,9 @@ for i_sheet in sheet_list:
         data.attrs['target_channel'] = 'blue'
         data.attrs['binder_channel'] = ['green']
         data = imscrollIO.import_interval_results(data)
-        try :
+        try:
             data = imscrollIO.import_viterbi_paths(data)
-        except:
+        except FileNotFoundError:
             print('error in {}'.format(filestr))
             continue
 
