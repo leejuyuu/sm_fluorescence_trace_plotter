@@ -9,7 +9,6 @@ import sys
 
 
 def import_everything(filestr, datapath):
-
     data = initialize_data_from_intensity_traces(datapath, filestr)
     data = import_image_path_from_driftfit(data)
     data = import_time_stamps_for_proem(data)
@@ -57,14 +56,12 @@ def import_time_stamps(channels_info):
     for channel, image_path in channels_info.items():
         header_file_path = image_path / 'header.mat'
         header_file = sio.loadmat(header_file_path)
-        time_stamps = header_file['vid']['ttb'][0,0].squeeze()
+        time_stamps = header_file['vid']['ttb'][0, 0].squeeze()
         channels_time_stamps[channel] = time_stamps
         timezeros.append(time_stamps[0])
     starttime = min(timezeros)
     for channel, time_stamps in channels_time_stamps.items():
-        channels_time_stamps[channel] = (time_stamps - starttime)/1000
-
-
+        channels_time_stamps[channel] = (time_stamps - starttime) / 1000
 
     return channels_time_stamps
 
@@ -80,14 +77,13 @@ def initialize_data_from_intensity_traces(datapath, filestr):
     nAOI = traces_file['traces'][channels[0]][0, 0].shape[0]
     for i_channel in channels:
         i_intensity = xr.DataArray(traces_file['traces'][i_channel][0, 0],
-                             dims=('AOI', 'time'),
-                             coords={'AOI': range(1, nAOI+1),
-                                     'time': channels_time_stamps[i_channel]})
+                                   dims=('AOI', 'time'),
+                                   coords={'AOI': range(1, nAOI + 1),
+                                           'time': channels_time_stamps[i_channel]})
 
         list_of_intensity_arrays.append(i_intensity)
 
-
-    intensity = xr.concat(list_of_intensity_arrays, dim='channel')
+    intensity: xr.DataArray = xr.concat(list_of_intensity_arrays, dim='channel')
 
     data = xr.Dataset({'intensity': (['channel', 'AOI', 'time'], intensity)},
                       coords={'AOI': intensity.AOI,
@@ -121,7 +117,7 @@ def import_time_stamps_for_proem(data):
     data.attrs['frame_start'] = frame_start
     data.attrs['frame_end'] = frame_end
 
-    time_stamps = time_data[1, frame_start:frame_end+1]
+    time_stamps = time_data[1, frame_start:frame_end + 1]
     data = data.assign_coords(time=time_stamps)
 
     return data
@@ -135,13 +131,13 @@ def import_interval_results(data):
         i_interval_traces = np.zeros(data.intensity.sel(channel=i_channel).shape)
         for iAOI in range(0, data.intensity.shape[0]):
             i_interval_traces[iAOI, :] = \
-                interval_file['intervals'][i_channel][0, 0]['AllTracesCellArray'][0,0][iAOI, 0][:, 0]
+                interval_file['intervals'][i_channel][0, 0]['AllTracesCellArray'][0, 0][iAOI, 0][:, 0]
         i_interval_traces = np.expand_dims(i_interval_traces, 3)
         i_interval_traces = xr.DataArray(i_interval_traces,
-                                       dims=('AOI', 'time', 'channel'),
-                                       coords={'AOI': range(1, data.intensity.shape[0]+1),
-                                               'time': data.time.sel(channel=i_channel),
-                                               'channel': [i_channel]})
+                                         dims=('AOI', 'time', 'channel'),
+                                         coords={'AOI': range(1, data.intensity.shape[0] + 1),
+                                                 'time': data.time.sel(channel=i_channel),
+                                                 'channel': [i_channel]})
         i_interval_traces = i_interval_traces.stack(channel_time=['channel', 'time'])
         interval_traces_list.append(i_interval_traces)
     interval_traces = xr.concat(interval_traces_list, dim='channel_time')
@@ -158,13 +154,13 @@ def import_viterbi_paths(data):
         n_frames = len(data.time.sel(channel=i_channel))
         i_vit = np.zeros((len(data.AOI), n_frames, 2))
         for iAOI in range(0, len(data.AOI)):
-            i_vit[iAOI, :, 0] = eb_file[i_channel][0,0]['Vit'][0,0][0, iAOI]['x'].squeeze()
-            i_vit[iAOI, :, 1] = eb_file[i_channel][0,0]['Vit'][0,0][0, iAOI]['z'].squeeze()
+            i_vit[iAOI, :, 0] = eb_file[i_channel][0, 0]['Vit'][0, 0][0, iAOI]['x'].squeeze()
+            i_vit[iAOI, :, 1] = eb_file[i_channel][0, 0]['Vit'][0, 0][0, iAOI]['z'].squeeze()
         i_vit = np.expand_dims(i_vit, 4)
         i_viterbi_path = xr.DataArray(i_vit,
                                       dims=('AOI', 'time', 'state', 'channel'),
                                       coords={'channel': [i_channel],
-                                        'state': ['position', 'label'],
+                                              'state': ['position', 'label'],
                                               'AOI': data.AOI,
                                               'time': data.time.sel(channel=i_channel)})
         i_viterbi_path = i_viterbi_path.stack(channel_time=('channel', 'time'))
@@ -178,6 +174,7 @@ def save_data_to_netcdf(path, data):
     # data.attrs['image_path'] = str(data.image_path)
     data.to_netcdf(path)
     return 0
+
 
 def load_data_from_netcdf(path):
     data = xr.open_dataset(path)
