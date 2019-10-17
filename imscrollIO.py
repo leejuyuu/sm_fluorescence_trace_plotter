@@ -2,8 +2,10 @@ import scipy.io as sio
 import numpy as np
 from pathlib import Path
 import xarray as xr
-from tkinter import Tk, filedialog
 import json
+from PySide2.QtWidgets import QApplication, QFileDialog, QWidget
+from PySide2.QtCore import QTimer
+import sys
 
 
 def import_everything(filestr, datapath):
@@ -17,14 +19,24 @@ def import_everything(filestr, datapath):
 
 
 def def_data_path():
-    # with open('pathconfig.txt', 'r') as pathconfig:
-    #     path = pathconfig.readline()
-    # path = path[:-1]
-    # datapath = Path(path)
-    root = Tk()
-    data_dir_str = filedialog.askdirectory()
-    root.destroy()
+    app = QApplication(sys.argv)
+    w = QWidget()
+    data_dir_str = QFileDialog.getExistingDirectory(w, caption='Select data path')
     datapath = Path(data_dir_str)
+    # Let the event loop terminate after 1 ms and quit QApplication
+    QTimer.singleShot(1, app.quit)
+    app.exec_()
+    return datapath
+
+
+def qt_getfile():
+    app = QApplication(sys.argv)
+    w = QWidget()
+    data_dir_str = QFileDialog.getOpenFileName(w, caption='Select file')[0]
+    datapath = Path(data_dir_str)
+    # Let the event loop terminate after 1 ms and quit QApplication
+    QTimer.singleShot(1, app.quit)
+    app.exec_()
     return datapath
 
 
