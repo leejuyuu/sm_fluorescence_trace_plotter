@@ -1,18 +1,15 @@
-from pathlib import Path
+
 import pandas as pd
 import imscrollIO
 import binding_kinetics as bk
 
 
-def categorize_binding_traces():
-    # xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterFile.xlsx')
-    xlspath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911parameterFile.xlsx')
+def categorize_binding_traces(parameter_file_path, sheet_list):
+    datapath = imscrollIO.def_data_path()
+    # datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
 
-    # datapath = imscrollIO.def_data_path()
-    datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
-    SHEET_LIST = ['L1']
-    for i_sheet in SHEET_LIST:
-        dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
+    for i_sheet in sheet_list:
+        dfs = pd.read_excel(parameter_file_path, sheet_name=i_sheet)
         nFiles = dfs.shape[0]
         for iFile in range(0, nFiles):
             filestr = dfs.filename[iFile]
@@ -45,4 +42,18 @@ def categorize_binding_traces():
 
 
 if __name__ == '__main__':
-    categorize_binding_traces()
+    # xlspath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911parameterFile.xlsx')
+    while True:
+        xlsx_parameter_file_path = imscrollIO.qt_getfile()
+        print(xlsx_parameter_file_path)
+        yes_no = input('Confirm [y/n]: ')
+        if yes_no == 'y':
+            break
+    while True:
+        input_str = input('Enter the sheets to be analyzed: ')
+        sheet_list_out = input_str.split(', ')
+        print(sheet_list_out)
+        yes_no2 = input('Confirm [y/n]: ')
+        if yes_no2 == 'y':
+            break
+    categorize_binding_traces(xlsx_parameter_file_path, sheet_list_out)
