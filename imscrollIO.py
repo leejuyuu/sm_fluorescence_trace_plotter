@@ -18,7 +18,9 @@ def import_everything(filestr, datapath):
 
 
 def def_data_path():
-    app = QApplication(sys.argv)
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
     w = QWidget()
     data_dir_str = QFileDialog.getExistingDirectory(w, caption='Select data path')
     datapath = Path(data_dir_str)
@@ -29,7 +31,9 @@ def def_data_path():
 
 
 def qt_getfile():
-    app = QApplication(sys.argv)
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
     w = QWidget()
     data_dir_str = QFileDialog.getOpenFileName(w, caption='Select file')[0]
     datapath = Path(data_dir_str)
