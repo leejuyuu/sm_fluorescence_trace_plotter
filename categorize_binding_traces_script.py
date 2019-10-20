@@ -2,6 +2,7 @@
 import pandas as pd
 import imscrollIO
 import binding_kinetics as bk
+from pathlib import Path
 
 
 def categorize_binding_traces(parameter_file_path, sheet_list):
@@ -48,6 +49,7 @@ if __name__ == '__main__':
         print(xlsx_parameter_file_path)
         yes_no = input('Confirm [y/n]: ')
         if yes_no == 'y':
+            xlsx_parameter_file_path = Path(xlsx_parameter_file_path)
             break
     while True:
         input_str = input('Enter the sheets to be analyzed: ')
