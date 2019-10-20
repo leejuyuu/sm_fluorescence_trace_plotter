@@ -2,67 +2,42 @@ from pathlib import Path
 import pandas as pd
 import imscrollIO
 
-xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterFile.xlsx')
-datapath = imscrollIO.def_data_path()
-sheet_list = ['L1', 'L2', 'L3', 'L4']
-for i_sheet in sheet_list:
-    dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
 
-    nFiles = dfs.shape[0]
-    for iFile in range(0, nFiles):
-        filestr = dfs.filename[iFile]
+def group_imscroll_data_to_xr_json(xlspath, sheet_list):
+    datapath = imscrollIO.def_data_path()
+    for i_sheet in sheet_list:
+        dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
 
-        data = imscrollIO.initialize_data_from_intensity_traces(datapath, filestr)
-        data.attrs['target_channel'] = 'blue'
-        data.attrs['binder_channel'] = ['green']
-        data = imscrollIO.import_interval_results(data)
-        try:
-            data = imscrollIO.import_viterbi_paths(data)
-        except FileNotFoundError:
-            print('error in {}'.format(filestr))
-            continue
+        nFiles = dfs.shape[0]
+        for iFile in range(0, nFiles):
+            filestr = dfs.filename[iFile]
 
-        imscrollIO.save_data_to_json(datapath / (filestr + '_data.json'), data)
+            data = imscrollIO.initialize_data_from_intensity_traces(datapath, filestr)
+            data.attrs['target_channel'] = 'blue'
+            data.attrs['binder_channel'] = ['green']
+            data = imscrollIO.import_interval_results(data)
+            try:
+                data = imscrollIO.import_viterbi_paths(data)
+            except FileNotFoundError:
+                print('error in {}'.format(filestr))
+                continue
 
-    #
-    # nAOIs = len(data.AOI)
-    #
-    #
-    # if not os.path.isdir(datapath / filestr):
-    #     os.mkdir(datapath / filestr)
-    # for iAOI in data.AOI:
-    #
-    #     plt.figure(figsize=(10, 5))
-    #
-    #     plt.suptitle('molecule {}'.format(iAOI.values), fontsize=14)
-    #     plt.xlim((0, data.time.max()))
-    #     plt.xlabel('time', fontsize=16)
-    #
-    #     plt.ylabel('Intensity', fontsize=16)
-    #     for i, i_channel in enumerate(data.channel.values, 1):
-    #
-    #         plt.subplot(3, 1, i)
-    #         y = data['intensity'].sel(AOI=iAOI, channel=i_channel)
-    #         bool_nan = xr.ufuncs.logical_not(xr.ufuncs.isnan(y))
-    #         plt.plot(data.time.where(bool_nan, drop=True),
-    #                  y.where(bool_nan, drop=True),
-    #                  color=i_channel
-    #                  )
-    #         plt.xlim((0, data.time.max()))
-    #
-    #
-    #
-    #     plt.xlabel('time (s)', fontsize=16)
-    #
-    #     plt.ylabel('Intensity', fontsize=16)
-    #     # plt.show()
-    #
-    #
-    #
-    #
-    #     plt.savefig(datapath / filestr / ('molecule{}.png'.format(iAOI.values)), Transparent=True,
-    #                 dpi=300, bbox_inches='tight')
-    #
-    #     plt.close()
+            imscrollIO.save_data_to_json(datapath / (filestr + '_data.json'), data)
 
-123
+
+if __name__ == '__main__':
+    while True:
+        xlsx_parameter_file_path = imscrollIO.qt_getfile()
+        print(xlsx_parameter_file_path)
+        yes_no = input('Confirm [y/n]: ')
+        if yes_no == 'y':
+            xlsx_parameter_file_path = Path(xlsx_parameter_file_path)
+            break
+    while True:
+        input_str = input('Enter the sheets to be analyzed: ')
+        sheet_list_out = input_str.split(', ')
+        print(sheet_list_out)
+        yes_no2 = input('Confirm [y/n]: ')
+        if yes_no2 == 'y':
+            break
+    group_imscroll_data_to_xr_json(xlsx_parameter_file_path, sheet_list_out)
