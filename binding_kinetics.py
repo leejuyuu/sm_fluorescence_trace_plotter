@@ -219,20 +219,27 @@ def group_analyzable_aois_into_state_number(intervals):
 
 
 def extract_dwell_time(intervals_list, state):
-    # selection = 1 for end, -1 for start, 0 for intermediate
+
     out_list = []
     for i_file_intervals in intervals_list:
         for iAOI in i_file_intervals.AOI:
             i_AOI_intervals = i_file_intervals.sel(AOI=iAOI)
             valid_intervals = i_AOI_intervals.where(
-               np.logical_not(np.isnan(i_AOI_intervals.duration)),
+                np.logical_not(np.isnan(i_AOI_intervals.duration)),
                 drop=True)
-            selected_intervals = valid_intervals.isel(interval_number=slice(1, -1))
-            i_dwell = selected_intervals['duration'].where(selected_intervals.state_number == state,
-                                                           drop=True)
-            out_list.append(i_dwell.values)
+            # selected_intervals = valid_intervals.isel(interval_number=slice(1, -1))
+            valid_intervals = valid_intervals.assign({'event_observed' :('interval_number', np.ones(len(valid_intervals.interval_number)))})
+            valid_intervals['event_observed'][-1] = 0
+            i_dwell = valid_intervals[['duration', 'event_observed']].where(valid_intervals.state_number == state,
+                                                                            drop=True)
 
-    out = np.concatenate(tuple(out_list))
+            i_dwell['event_observed'] = i_dwell['event_observed'].astype(bool)
+            i_dwell = i_dwell.reset_index('interval_number')
+
+
+            out_list.append(i_dwell)
+
+    out = xr.concat(out_list, dim='interval_number')
 
     return out
 
