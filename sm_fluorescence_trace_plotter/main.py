@@ -21,13 +21,66 @@
 import sys
 from PySide2.QtWidgets import QApplication
 from PySide2.QtQuick import QQuickView
-from PySide2.QtCore import Qt, QUrl
+from PySide2.QtCore import Qt, QUrl, QAbstractListModel, QModelIndex
+import sm_fluorescence_trace_plotter.python_for_imscroll.imscrollIO
+from collections import namedtuple
+
+
+class TraceInfoModel(QAbstractListModel):
+
+    def __init__(self):
+        super(TraceInfoModel, self).__init__()
+        entry = namedtuple('data_entry', ['key', 'value', 'is_editable'])
+        self.data_list = [entry('key1', 'value1', False),
+                          entry('key2', 'value2', True)]
+        self.property_name_role = Qt.UserRole + 1
+        self.value_role = Qt.UserRole + 2
+        self.is_editable_role = Qt.UserRole + 3
+
+    def rowCount(self, parent: QModelIndex=None) -> int:
+        return len(self.data_list)
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int=Qt.DisplayRole):
+        if orientation == Qt.Vertical:
+            return self.data_list[section].key
+        else:
+            return None
+
+    def data(self, index:QModelIndex, role:int=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return self.data_list[index.row()].value
+        elif role == Qt.EditRole:
+            return self.data_list[index.row()].value
+        elif role == Qt.BackgroundRole:
+            # not finished
+            return 0
+        elif role == self.is_editable_role:
+            return self.data_list[index.row()].is_editable
+        elif role == self.property_name_role:
+            return self.data_list[index.row()].key
+        elif role == self.value_role:
+            return self.data_list[index.row()].value
+        else:
+            return None
+
+    def roleNames(self):
+        role_names = super(TraceInfoModel, self).roleNames()
+        role_names[self.is_editable_role] = b'isEditable'
+        role_names[self.property_name_role] = b'propertyName'
+        role_names[self.value_role] = b'value'
+        return role_names
+
+
+
 
 
 if __name__ == '__main__':
+    trace_info_model = TraceInfoModel()
     app = QApplication([])
     view = QQuickView()
     view.setResizeMode(QQuickView.SizeRootObjectToView)
+    rc = view.rootContext()
+    rc.setContextProperty('traceInfoModel', trace_info_model)
     view.setSource(QUrl('./qml/main.qml'))
     view.show()
     sys.exit(app.exec_())
