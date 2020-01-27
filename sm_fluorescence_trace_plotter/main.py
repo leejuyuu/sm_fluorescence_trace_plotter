@@ -19,9 +19,11 @@
 """main function"""
 
 import sys
+import numpy as np
 from PySide2.QtWidgets import QApplication
 from PySide2.QtQuick import QQuickView
-from PySide2.QtCore import Qt, QUrl, QAbstractListModel, QModelIndex
+from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
+                            QModelIndex)
 import sm_fluorescence_trace_plotter.python_for_imscroll.imscrollIO
 from collections import namedtuple
 
@@ -71,16 +73,44 @@ class TraceInfoModel(QAbstractListModel):
         return role_names
 
 
+class TraceModel(QAbstractTableModel):
+
+    def __init__(self):
+        super(TraceModel, self).__init__()
+        xvalue = np.arange(0, 1000).reshape((1000, 1))
+        data = np.random.standard_normal((1000, 3))
+        data[500:, 0] += 5
+        data[700:, 1] += 5
+        data[800:, 2] += 5
+        self.data_array = np.concatenate((xvalue, data), axis=1)
+
+    def rowCount(self, parent: QModelIndex=None) -> int:
+        return self.data_array.shape[0]
+
+    def columnCount(self, parent: QModelIndex=None) -> int:
+        return self.data_array.shape[1]
+
+    def data(self, index: QModelIndex, role: int=Qt.DisplayRole):
+        row = index.row()
+        column = index.column()
+        if role == Qt.DisplayRole:
+            return self.data_array[row, column].item()
+        elif role == Qt.EditRole:
+            return self.data_array[row, column].item()
+        else:
+            return None
 
 
 
 if __name__ == '__main__':
     trace_info_model = TraceInfoModel()
+    trace_model = TraceModel()
     app = QApplication([])
     view = QQuickView()
     view.setResizeMode(QQuickView.SizeRootObjectToView)
     rc = view.rootContext()
     rc.setContextProperty('traceInfoModel', trace_info_model)
+    rc.setContextProperty('traceModel', trace_model)
     view.setSource(QUrl('./qml/main.qml'))
     view.show()
     sys.exit(app.exec_())

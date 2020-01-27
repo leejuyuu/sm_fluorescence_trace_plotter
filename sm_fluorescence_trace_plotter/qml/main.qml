@@ -1,6 +1,7 @@
 import QtQuick 2.14
 import QtQuick.Layouts 1.14
 import QtQuick.Controls 2.14
+import QtCharts 2.14
 
 Item {
     id: root
@@ -21,27 +22,65 @@ Item {
             margins: 40
         }
 
-        Rectangle {
-            color: 'red'
+        ChartView {
+            id: chart1
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.columnSpan: 2
+            legend.visible: false
+            margins {left: 0; right: 0; top: 0; bottom: 0}
 
+            // Draw a rectangle as the border of the plot area.
+            Rectangle {
+                color: 'transparent'
+                x: chart1.plotArea.x-1
+                y: chart1.plotArea.y-1
+                width: chart1.plotArea.width+2
+                height: chart1.plotArea.height+2
+                border {
+                    color: 'black'
+                    width: 1.5
+                }
+            }
+            ValueAxis {
+                id: axis1x
+                gridVisible: false
+                labelFormat: '%.0f'
+                Component.onCompleted: {
+                    axis1x.applyNiceNumbers()
+                }
+            }
+            ValueAxis {
+                id: axis1y
+                gridVisible: false
+                labelFormat: '%.0f'
+                Component.onCompleted: {
+                    axis1y.applyNiceNumbers()
+                }
+            }
+
+            LineSeries {
+                id: kkk
+                name: 'trace1'
+                axisX: axis1x
+                axisY: axis1y
+                width: 1.5
+                color: 'green'
+                VXYModelMapper {
+                    model: traceModel
+                    xColumn: 0
+                    yColumn: 1
+                }
+            }
         }
         Rectangle {
             color:'green'
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.columnSpan: 2
-
         }
         Rectangle {
             color: 'blue'
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.columnSpan: 2
-
-
         }
         ListView {
 
