@@ -51,7 +51,7 @@ Item {
 
         ListView {
 
-            Layout.rowSpan: 3
+            Layout.rowSpan: 2
             Layout.fillHeight: true
             //Layout.preferredWidth: 200
             Layout.preferredWidth: gridLayout.width * 0.4
@@ -112,12 +112,24 @@ Item {
             }
 
         }
+
+        Rectangle {
+            Layout.rowSpan: 1
+            Layout.preferredWidth: gridLayout.width * 0.4
+            Layout.fillHeight: true
+
+            Button {
+                text: 'Debug trace info'
+                onClicked: traceInfoModel.debug()
+                anchors.centerIn: parent
+            }
+        }
     }
 
     Text {
         anchors.fill: parent
         text: 'hello'
-        TextField{
+        TextField {
             id:ttt
         }
 

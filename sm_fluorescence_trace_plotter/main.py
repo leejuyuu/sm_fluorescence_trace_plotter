@@ -23,7 +23,7 @@ import numpy as np
 from PySide2.QtWidgets import QApplication
 from PySide2.QtQuick import QQuickView
 from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
-                            QModelIndex)
+                            QModelIndex, Slot)
 import sm_fluorescence_trace_plotter.python_for_imscroll.imscrollIO
 from collections import namedtuple
 
@@ -71,6 +71,12 @@ class TraceInfoModel(QAbstractListModel):
         role_names[self.property_name_role] = b'propertyName'
         role_names[self.value_role] = b'value'
         return role_names
+
+    @Slot()
+    def debug(self):
+        pass
+
+
 
 
 class TraceModel(QAbstractTableModel):
