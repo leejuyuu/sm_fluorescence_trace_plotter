@@ -18,6 +18,7 @@
 
 """main function"""
 
+import typing
 import sys
 import numpy as np
 from PySide2.QtWidgets import QApplication
@@ -71,6 +72,19 @@ class TraceInfoModel(QAbstractListModel):
         role_names[self.property_name_role] = b'propertyName'
         role_names[self.value_role] = b'value'
         return role_names
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        if not index.isValid():
+            return Qt.NoItemFlags
+        return Qt.ItemIsEditable | Qt.ItemIsEnabled
+
+    def setData(self, index: QModelIndex, value: typing.Any, role:int=None) -> bool:
+        if index.isValid() and role == Qt.EditRole:
+            row = index.row()
+            self.data_list[row] = self.data_list[row]._replace(value=value)
+            self.dataChanged.emit(index, index)
+            return True
+        return False
 
     @Slot()
     def debug(self):

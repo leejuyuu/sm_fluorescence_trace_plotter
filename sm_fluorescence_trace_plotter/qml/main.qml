@@ -10,7 +10,6 @@ Item {
     MouseArea {
         anchors.fill: parent
         onClicked: {focus=true}
-
     }
 
     GridLayout {
@@ -53,7 +52,6 @@ Item {
 
             Layout.rowSpan: 2
             Layout.fillHeight: true
-            //Layout.preferredWidth: 200
             Layout.preferredWidth: gridLayout.width * 0.4
             Layout.minimumWidth: 200
             model: traceInfoModel
@@ -61,11 +59,6 @@ Item {
             interactive: false
             spacing: 10
 
-            //            delegate: Rectangle {
-            //                implicitHeight: 40
-            //                implicitWidth: 100
-
-            //            }
             delegate: Item {
                 id: entryRoot
                 implicitHeight: 40
@@ -87,13 +80,24 @@ Item {
 
                     Component {
                         id: editableTextComp
+
                         TextField {
+                            id: listTextField
+
                             anchors.fill: parent
-                            text: model.value
-                            selectByMouse: true
+                            text: focus ? model.edit : model.value
                             font.pointSize: 12
+                            selectByMouse: true                            
 
+                            onFocusChanged: {
+                                if (focus){}
+                                else{ editingFinished() }
+                            }
 
+                            onEditingFinished: {
+                                focus = false
+                                model.edit = text
+                            }
                         }
 
                     }
