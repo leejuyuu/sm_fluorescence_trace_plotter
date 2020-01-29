@@ -203,3 +203,14 @@ def load_data_from_json(path):
     data = data.set_index(channel_time=['channel', 'time'])
     # data.attrs['datapath'] = Path(data.datapath)
     return data
+
+
+def get_xlsx_parameter_file_path():
+    while True:
+        xlsx_parameter_file_path = qt_getfile()
+        print(xlsx_parameter_file_path)
+        yes_no = input('Confirm [y/n]: ')
+        if yes_no == 'y':
+            xlsx_parameter_file_path = Path(xlsx_parameter_file_path)
+            break
+    return xlsx_parameter_file_path
