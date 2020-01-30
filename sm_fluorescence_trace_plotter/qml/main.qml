@@ -92,13 +92,11 @@ Item {
 
                             onFocusChanged: {
                                 if (focus){}
-                                else{ editingFinished() }
+                                else{ model.edit = text }
+
                             }
 
-                            onEditingFinished: {
-                                focus = false
-                                model.edit = text
-                            }
+                            onEditingFinished: {focus = false}
                         }
 
                     }
