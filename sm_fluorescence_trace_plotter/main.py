@@ -33,6 +33,7 @@ from collections import namedtuple
 import pandas as pd
 
 
+# noinspection PyProtectedMember,PyProtectedMember
 class TraceInfoModel(QAbstractListModel):
 
     def __init__(self, parameter_file_path):
@@ -49,7 +50,6 @@ class TraceInfoModel(QAbstractListModel):
         self.current_fov = fov_list[0]
         self.current_molecule = 1
 
-
         # choose delegate enumeration is defined in main.qml
         entry = namedtuple('data_entry', ['key', 'value', 'chooseDelegate'])
         self.data_list = [entry('Sheet name', self.current_sheet, 2),
@@ -60,16 +60,16 @@ class TraceInfoModel(QAbstractListModel):
         self.value_role = Qt.UserRole + 2
         self.choose_delegate_role = Qt.UserRole + 3
 
-    def rowCount(self, parent: QModelIndex=None) -> int:
+    def rowCount(self, parent: QModelIndex = None) -> int:
         return len(self.data_list)
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int=Qt.DisplayRole):
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
         if orientation == Qt.Vertical:
             return self.data_list[section].key
         else:
             return None
 
-    def data(self, index:QModelIndex, role:int=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if role == Qt.DisplayRole:
             return self.data_list[index.row()].value
         elif role == Qt.EditRole:
@@ -98,7 +98,7 @@ class TraceInfoModel(QAbstractListModel):
             return Qt.NoItemFlags
         return Qt.ItemIsEditable | Qt.ItemIsEnabled
 
-    def setData(self, index: QModelIndex, value: typing.Any, role:int=None) -> bool:
+    def setData(self, index: QModelIndex, value: typing.Any, role: int = None) -> bool:
         if index.isValid() and role == Qt.EditRole:
             row = index.row()
             self.data_list[row] = self.data_list[row]._replace(value=value)
@@ -132,9 +132,6 @@ class TraceInfoModel(QAbstractListModel):
     fovModel = Property(QObject, read_fov_model, notify=fov_model_changed)
 
 
-
-
-
 class TraceModel(QAbstractTableModel):
 
     def __init__(self, trace_info_model: TraceInfoModel):
@@ -146,19 +143,19 @@ class TraceModel(QAbstractTableModel):
                 self.datapath / (self.trace_info_model.current_fov + '_all.json'))
         except FileNotFoundError:
             print('file not found')
-        category = self.get_category(self.trace_info_model.current_molecule)
+        category = self.get_category()
         self.trace_info_model.set_category(category)
         self.data_xr = all_data['data']
         self.channels = [self.data_xr.target_channel] + self.data_xr.binder_channel
-        self.map_data_to_model_storage(self.trace_info_model.current_molecule)
+        self.map_data_to_model_storage()
 
-    def rowCount(self, parent: QModelIndex=None) -> int:
+    def rowCount(self, parent: QModelIndex = None) -> int:
         return self.data_array.shape[0]
 
-    def columnCount(self, parent: QModelIndex=None) -> int:
+    def columnCount(self, parent: QModelIndex = None) -> int:
         return self.data_array.shape[1]
 
-    def data(self, index: QModelIndex, role: int=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         row = index.row()
         column = index.column()
         if role == Qt.DisplayRole:
@@ -168,7 +165,8 @@ class TraceModel(QAbstractTableModel):
         else:
             return None
 
-    def get_category(self, molecule) -> str:
+    def get_category(self) -> str:
+        molecule = self.trace_info_model.current_molecule
         found = False
         for key, value in self.AOI_categories.items():
             if found is True:
@@ -189,7 +187,7 @@ class TraceModel(QAbstractTableModel):
         else:
             return category
 
-    def map_data_to_model_storage(self, molecule):
+    def map_data_to_model_storage(self):
         outlist = []
         for channel in self.channels:
             channel_aoi_data = self.data_xr.sel(channel=channel,
@@ -199,10 +197,9 @@ class TraceModel(QAbstractTableModel):
                              channel_aoi_data.viterbi_path.sel(state='position')),
                             dim='').values
             outlist.append(out)
+        # noinspection PyAttributeOutsideInit
         self.data_array = np.concatenate(outlist)
         return True
-
-
 
 
 if __name__ == '__main__':
