@@ -50,14 +50,14 @@ Item {
             name: 'eb_state_trajectory'
             axisX: axisX
             axisY: axisY
-            width: 1.5
+            width: 3
             color: 'black'
 
-            VXYModelMapper {
+            HXYModelMapper {
                 id: mapper
                 model: root.traceDataModel
-                xColumn: root.timeColumnNumber
-                yColumn: root.timeColumnNumber + 2
+                xRow: root.timeColumnNumber
+                yRow: root.timeColumnNumber + 2
             }
         }
 
@@ -68,10 +68,10 @@ Item {
             width: 1.5
             color: root.traceColor
 
-            VXYModelMapper {
+            HXYModelMapper {
                 model: root.traceDataModel
-                xColumn: root.timeColumnNumber
-                yColumn: root.timeColumnNumber + 1
+                xRow: root.timeColumnNumber
+                yRow: root.timeColumnNumber + 1
             }
         }
     }

@@ -37,7 +37,7 @@ Item {
             Layout.fillHeight: true
             traceDataModel: traceModel
             traceColor: 'green'
-            timeColumnNumber: 0
+            timeColumnNumber: 3
         }
 
         TraceChart {
@@ -45,7 +45,7 @@ Item {
             Layout.fillHeight: true
             traceDataModel: traceModel
             traceColor: 'blue'
-            timeColumnNumber: 0
+            timeColumnNumber: 6
         }
 
         ListView {
@@ -76,7 +76,7 @@ Item {
 
                 Loader {
                     anchors {leftMargin: entryRoot.width * 0.4; fill: entryRoot }
-                    sourceComponent: model.isEditable ? editableTextComp : nonEditTextComp
+                    sourceComponent: assignDelegate(model.chooseDelegate)
 
                     Component {
                         id: editableTextComp
@@ -110,6 +110,50 @@ Item {
                             font.pointSize: 12
                         }
                     }
+
+                    Component {
+                        id: comboSheet
+                        ComboBox {
+                            anchors.top: parent.top
+                            model: traceInfoModel.sheetModel
+                            textRole: 'display'
+                            font.pointSize: 12
+                        }
+                    }
+
+                    Component {
+                        id: comboFov
+                        ComboBox {
+                            anchors.top: parent.top
+                            model: traceInfoModel.fovModel
+                            textRole: 'display'
+                            font.pointSize: 12
+                        }
+                    }
+
+                    Component {
+                        id: myrect
+                        Rectangle {
+                            anchors.fill: parent
+                            color: 'red'
+                        }
+                    }
+
+                    function assignDelegate(num){
+                        switch(num){
+                            // this enumeration is linked to main.py
+                        case 0:
+                            return nonEditTextComp
+                        case 1:
+                            return editableTextComp
+                        case 2:
+                            return comboSheet
+                        case 3:
+                            return comboFov
+                        default:
+                            return myrect
+                        }
+                    }
                 }
 
 
@@ -127,23 +171,8 @@ Item {
                 onClicked: traceInfoModel.debug()
                 anchors.centerIn: parent
             }
+
         }
     }
-
-    Text {
-        anchors.fill: parent
-        text: 'hello'
-        TextField {
-            id:ttt
-        }
-
-        Component.onCompleted: {console.log(ttt.implicitHeight.toString())
-            console.log(ttt.implicitWidth.toString())
-            console.log(ttt.leftPadding)
-        }
-    }
-
-
-
 
 }
