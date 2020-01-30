@@ -87,7 +87,8 @@ Item {
                             anchors.fill: parent
                             text: focus ? model.edit : model.value
                             font.pointSize: 12
-                            selectByMouse: true                            
+                            selectByMouse: true
+                            validator: IntValidator {bottom: 1}
 
                             onFocusChanged: {
                                 if (focus){}
