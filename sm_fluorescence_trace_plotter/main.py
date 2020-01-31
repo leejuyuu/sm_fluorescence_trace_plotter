@@ -20,6 +20,7 @@
 
 import typing
 import sys
+import os
 import numpy as np
 import xarray as xr
 from PySide2.QtWidgets import QApplication
@@ -216,6 +217,7 @@ if __name__ == '__main__':
     rc.setContextProperty('traceInfoModel', trace_model.trace_info_model)
     rc.setContextProperty('traceModel', trace_model)
     rc.setContextProperty('aac', trace_info_model.sheet_model)
-    view.setSource(QUrl('./qml/main.qml'))
+    dirname = os.path.dirname(__file__)
+    view.setSource(QUrl(os.path.join(dirname, 'qml/main.qml')))
     view.show()
     sys.exit(app.exec_())
