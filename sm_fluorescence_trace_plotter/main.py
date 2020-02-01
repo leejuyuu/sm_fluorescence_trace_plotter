@@ -154,6 +154,17 @@ class TraceInfoModel(QAbstractListModel):
         self.setData(molecule_index, self.current_molecule - 1, Qt.EditRole)
         return None
 
+    @Slot(int)
+    def onFovComboActivated(self, index: int):
+        activated_fov = self.fov_model.data(self.fov_model.createIndex(index, 0))
+        if activated_fov != self.current_fov:
+            self.current_fov = activated_fov
+            self.current_molecule = 1
+            self.set_data_list_storage()
+            self.dataChanged.emit(self.createIndex(2, 0),
+                                  self.createIndex(3, 0))
+            self.trace_model_should_change_file.emit()
+        return None
 
     @Slot()
     def debug(self):
@@ -177,6 +188,10 @@ class TraceInfoModel(QAbstractListModel):
     def molecule_changed(self):
         pass
 
+    @Signal
+    def trace_model_should_change_file(self):
+        pass
+
     sheetModel = Property(QObject, read_sheet_model, notify=sheet_model_changed)
     fovModel = Property(QObject, read_fov_model, notify=fov_model_changed)
 
@@ -187,6 +202,8 @@ class TraceModel(QAbstractTableModel):
         super(TraceModel, self).__init__()
         self.trace_info_model = trace_info_model
         self.trace_info_model.molecule_changed.connect(self.change_molecule, Qt.UniqueConnection)
+        self.trace_info_model.trace_model_should_change_file.connect(self.change_file,
+                                                                     Qt.UniqueConnection)
         self.datapath = imscrollIO.def_data_path()
         self.set_data_storage()
 
@@ -260,6 +277,11 @@ class TraceModel(QAbstractTableModel):
         self.channels = [self.data_xr.target_channel] + self.data_xr.binder_channel
         self.map_data_to_model_storage()
         self.trace_info_model.set_max_molecule_number(len(self.data_xr.AOI))
+
+    def change_file(self):
+        self.set_data_storage()
+        self.notify_whole_table_changed()
+        return None
 
     def notify_whole_table_changed(self):
         topleft = self.createIndex(0, 0)

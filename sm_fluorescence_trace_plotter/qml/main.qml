@@ -127,6 +127,7 @@ Item {
                             model: traceInfoModel.fovModel
                             textRole: 'display'
                             font.pointSize: 12
+                            onActivated: traceInfoModel.onFovComboActivated(index)
                         }
                     }
 
