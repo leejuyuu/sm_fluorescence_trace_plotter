@@ -51,13 +51,7 @@ class TraceInfoModel(QAbstractListModel):
         self.current_fov = fov_list[0]
         self.current_molecule = 1
         self.max_molecule = 1
-
-        # choose delegate enumeration is defined in main.qml
-        entry = namedtuple('data_entry', ['key', 'value', 'chooseDelegate'])
-        self.data_list = [entry('Sheet name', self.current_sheet, 2),
-                          entry('Field of view', self.current_fov, 3),
-                          entry('Molecule', self.current_molecule, 1),
-                          entry('Category', '', 0)]
+        self.set_data_list_storage()
         self.property_name_role = Qt.UserRole + 1
         self.value_role = Qt.UserRole + 2
         self.choose_delegate_role = Qt.UserRole + 3
@@ -137,6 +131,17 @@ class TraceInfoModel(QAbstractListModel):
                 self.molecule_changed.emit()
         return None
 
+    def set_data_list_storage(self, molecule: int = None):
+        if molecule is None:
+            molecule = self.current_molecule
+        # choose delegate enumeration is defined in main.qml
+        entry = namedtuple('data_entry', ['key', 'value', 'chooseDelegate'])
+        self.data_list = [entry('Sheet name', self.current_sheet, 2),
+                          entry('Field of view', self.current_fov, 3),
+                          entry('Molecule', molecule, 1),
+                          entry('Category', '', 0)]
+        return None
+
     @Slot()
     def onNextMoleculeButtonClicked(self):
         molecule_index = self.createIndex(2, 0)
@@ -183,17 +188,7 @@ class TraceModel(QAbstractTableModel):
         self.trace_info_model = trace_info_model
         self.trace_info_model.molecule_changed.connect(self.change_molecule, Qt.UniqueConnection)
         self.datapath = imscrollIO.def_data_path()
-        try:
-            all_data, self.AOI_categories = binding_kinetics.load_all_data(
-                self.datapath / (self.trace_info_model.current_fov + '_all.json'))
-        except FileNotFoundError:
-            print('file not found')
-        category = self.get_category()
-        self.trace_info_model.set_category(category)
-        self.data_xr = all_data['data']
-        self.channels = [self.data_xr.target_channel] + self.data_xr.binder_channel
-        self.map_data_to_model_storage()
-        self.trace_info_model.set_max_molecule_number(len(self.data_xr.AOI))
+        self.set_data_storage()
 
     def rowCount(self, parent: QModelIndex = None) -> int:
         return self.data_array.shape[0]
@@ -250,10 +245,26 @@ class TraceModel(QAbstractTableModel):
     def change_molecule(self):
         category = self.get_category()
         self.trace_info_model.set_category(category)
+        self.notify_whole_table_changed()
+        return None
+
+    def set_data_storage(self):
+        try:
+            all_data, self.AOI_categories = binding_kinetics.load_all_data(
+                self.datapath / (self.trace_info_model.current_fov + '_all.json'))
+        except FileNotFoundError:
+            print('file not found')
+        category = self.get_category()
+        self.trace_info_model.set_category(category)
+        self.data_xr = all_data['data']
+        self.channels = [self.data_xr.target_channel] + self.data_xr.binder_channel
+        self.map_data_to_model_storage()
+        self.trace_info_model.set_max_molecule_number(len(self.data_xr.AOI))
+
+    def notify_whole_table_changed(self):
         topleft = self.createIndex(0, 0)
         bottomright = self.createIndex(self.rowCount(), self.columnCount())
         self.dataChanged.emit(topleft, bottomright)
-        return None
 
 
 if __name__ == '__main__':
