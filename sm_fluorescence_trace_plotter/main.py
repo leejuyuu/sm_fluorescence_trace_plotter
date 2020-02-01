@@ -60,6 +60,7 @@ class TraceInfoModel(QAbstractListModel):
         self.property_name_role = Qt.UserRole + 1
         self.value_role = Qt.UserRole + 2
         self.choose_delegate_role = Qt.UserRole + 3
+        self.dataChanged.connect(self.refresh, Qt.UniqueConnection)
 
     def rowCount(self, parent: QModelIndex = None) -> int:
         return len(self.data_list)
@@ -102,14 +103,30 @@ class TraceInfoModel(QAbstractListModel):
     def setData(self, index: QModelIndex, value: typing.Any, role: int = None) -> bool:
         if index.isValid() and role == Qt.EditRole:
             row = index.row()
-            self.data_list[row] = self.data_list[row]._replace(value=value)
+            if row == 2: #molecule number
+                self.data_list[row] = self.data_list[row]._replace(value=int(value))
+            else:
+                self.data_list[row] = self.data_list[row]._replace(value=value)
             self.dataChanged.emit(index, index)
             return True
         return False
 
     def set_category(self, value: str) -> bool:
         self.data_list[3] = self.data_list[3]._replace(value=value)
+        index = self.createIndex(3, 0)
+        self.dataChanged.emit(index, index)
         return False
+
+    def refresh(self, topleft: QModelIndex, bottomright: QModelIndex,
+                role: list = None):
+        if role is None:
+            role = list()
+        if topleft == bottomright:
+            if topleft.row() == 2:  # Molecule number
+                self.current_molecule = self.data_list[2].value
+                self.molecule_changed.emit()
+        return None
+
 
     @Slot()
     def debug(self):
@@ -129,6 +146,10 @@ class TraceInfoModel(QAbstractListModel):
     def fov_model_changed(self):
         pass
 
+    @Signal
+    def molecule_changed(self):
+        pass
+
     sheetModel = Property(QObject, read_sheet_model, notify=sheet_model_changed)
     fovModel = Property(QObject, read_fov_model, notify=fov_model_changed)
 
@@ -138,6 +159,7 @@ class TraceModel(QAbstractTableModel):
     def __init__(self, trace_info_model: TraceInfoModel):
         super(TraceModel, self).__init__()
         self.trace_info_model = trace_info_model
+        self.trace_info_model.molecule_changed.connect(self.change_molecule, Qt.UniqueConnection)
         self.datapath = imscrollIO.def_data_path()
         try:
             all_data, self.AOI_categories = binding_kinetics.load_all_data(
@@ -157,12 +179,13 @@ class TraceModel(QAbstractTableModel):
         return self.data_array.shape[1]
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
+        aoi_data_array = self.data_array[:, :, self.trace_info_model.current_molecule-1]
         row = index.row()
         column = index.column()
         if role == Qt.DisplayRole:
-            return self.data_array[row, column].item()
+            return aoi_data_array[row, column].item()
         elif role == Qt.EditRole:
-            return self.data_array[row, column].item()
+            return aoi_data_array[row, column].item()
         else:
             return None
 
@@ -191,16 +214,23 @@ class TraceModel(QAbstractTableModel):
     def map_data_to_model_storage(self):
         outlist = []
         for channel in self.channels:
-            channel_aoi_data = self.data_xr.sel(channel=channel,
-                                                AOI=self.trace_info_model.current_molecule)
-            out = xr.concat((channel_aoi_data.time,
-                             channel_aoi_data.intensity,
-                             channel_aoi_data.viterbi_path.sel(state='position')),
+            channel_data = self.data_xr.sel(channel=channel)
+            out = xr.concat((channel_data.time,
+                             channel_data.intensity,
+                             channel_data.viterbi_path.sel(state='position')),
                             dim='').values
             outlist.append(out)
         # noinspection PyAttributeOutsideInit
         self.data_array = np.concatenate(outlist)
         return True
+
+    def change_molecule(self):
+        category = self.get_category()
+        self.trace_info_model.set_category(category)
+        topleft = self.createIndex(0, 0)
+        bottomright = self.createIndex(self.rowCount(), self.columnCount())
+        self.dataChanged.emit(topleft, bottomright)
+        return None
 
 
 if __name__ == '__main__':
