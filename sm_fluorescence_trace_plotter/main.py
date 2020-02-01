@@ -50,6 +50,7 @@ class TraceInfoModel(QAbstractListModel):
         self.fov_model = QStringListModel(fov_list)
         self.current_fov = fov_list[0]
         self.current_molecule = 1
+        self.max_molecule = 1
 
         # choose delegate enumeration is defined in main.qml
         entry = namedtuple('data_entry', ['key', 'value', 'chooseDelegate'])
@@ -104,10 +105,15 @@ class TraceInfoModel(QAbstractListModel):
         if index.isValid() and role == Qt.EditRole:
             row = index.row()
             if row == 2: #molecule number
-                self.data_list[row] = self.data_list[row]._replace(value=int(value))
+                value = int(value)
+                if value == self.current_molecule:
+                    return True
+                if 1 <= value <= self.max_molecule:
+                    self.data_list[row] = self.data_list[row]._replace(value=value)
+                    self.dataChanged.emit(index, index)
             else:
                 self.data_list[row] = self.data_list[row]._replace(value=value)
-            self.dataChanged.emit(index, index)
+                self.dataChanged.emit(index, index)
             return True
         return False
 
@@ -116,6 +122,10 @@ class TraceInfoModel(QAbstractListModel):
         index = self.createIndex(3, 0)
         self.dataChanged.emit(index, index)
         return False
+
+    def set_max_molecule_number(self, number: int):
+        self.max_molecule = number
+        return None
 
     def refresh(self, topleft: QModelIndex, bottomright: QModelIndex,
                 role: list = None):
@@ -136,8 +146,7 @@ class TraceInfoModel(QAbstractListModel):
     @Slot()
     def onPreviousMoleculeButtonClicked(self):
         molecule_index = self.createIndex(2, 0)
-        if self.current_molecule != 1:
-            self.setData(molecule_index, self.current_molecule - 1, Qt.EditRole)
+        self.setData(molecule_index, self.current_molecule - 1, Qt.EditRole)
         return None
 
 
@@ -184,6 +193,7 @@ class TraceModel(QAbstractTableModel):
         self.data_xr = all_data['data']
         self.channels = [self.data_xr.target_channel] + self.data_xr.binder_channel
         self.map_data_to_model_storage()
+        self.trace_info_model.set_max_molecule_number(len(self.data_xr.AOI))
 
     def rowCount(self, parent: QModelIndex = None) -> int:
         return self.data_array.shape[0]
