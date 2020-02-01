@@ -171,6 +171,19 @@ Item {
                 anchors.centerIn: parent
             }
 
+            Row {
+                spacing: 10
+                Button {
+                    id: previousMoleculeButton
+                    text: 'previous'
+                    onClicked: traceInfoModel.onPreviousMoleculeButtonClicked()
+                }
+                Button {
+                    id: nextMoleculeButton
+                    text: 'next'
+                    onClicked: traceInfoModel.onNextMoleculeButtonClicked()
+                }
+            }
         }
     }
 

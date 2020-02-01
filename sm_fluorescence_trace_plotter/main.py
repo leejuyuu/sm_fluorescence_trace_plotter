@@ -127,6 +127,19 @@ class TraceInfoModel(QAbstractListModel):
                 self.molecule_changed.emit()
         return None
 
+    @Slot()
+    def onNextMoleculeButtonClicked(self):
+        molecule_index = self.createIndex(2, 0)
+        self.setData(molecule_index, self.current_molecule + 1, Qt.EditRole)
+        return None
+
+    @Slot()
+    def onPreviousMoleculeButtonClicked(self):
+        molecule_index = self.createIndex(2, 0)
+        if self.current_molecule != 1:
+            self.setData(molecule_index, self.current_molecule - 1, Qt.EditRole)
+        return None
+
 
     @Slot()
     def debug(self):
