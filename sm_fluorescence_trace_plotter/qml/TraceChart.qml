@@ -52,6 +52,7 @@ Item {
             axisY: axisY
             width: 3
             color: 'black'
+            useOpenGL: true
 
             HXYModelMapper {
                 id: mapper
@@ -67,6 +68,7 @@ Item {
             axisY: axisY
             width: 1.5
             color: root.traceColor
+            useOpenGL: true
 
             HXYModelMapper {
                 model: root.traceDataModel
