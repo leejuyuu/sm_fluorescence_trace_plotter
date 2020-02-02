@@ -39,16 +39,13 @@ class TraceInfoModel(QAbstractListModel):
 
     def __init__(self, parameter_file_path):
         super(TraceInfoModel, self).__init__()
+        self.parameter_file_path = parameter_file_path
         parameter_file = pd.ExcelFile(parameter_file_path)
         sheet_names = parameter_file.sheet_names
         self.sheet_model = QStringListModel(sheet_names[:-1])
         self.current_sheet = sheet_names[0]
-        dfs = parameter_file.parse(sheet_name=sheet_names[0])
-
-        fov_list = dfs['filename'].tolist()
-        parameter_file.close()
-        self.fov_model = QStringListModel(fov_list)
-        self.current_fov = fov_list[0]
+        self.fov_model = QStringListModel()
+        self.set_fov_list(parameter_file)
         self.current_molecule = 1
         self.max_molecule = 1
         self.set_data_list_storage()
@@ -141,6 +138,15 @@ class TraceInfoModel(QAbstractListModel):
                           entry('Molecule', molecule, 1),
                           entry('Category', '', 0)]
         return None
+
+    def set_fov_list(self, parameter_file: pd.ExcelFile = None):
+        if parameter_file is None:
+            parameter_file = pd.ExcelFile(self.parameter_file_path)
+        dfs = parameter_file.parse(sheet_name=self.current_sheet)
+        fov_list = dfs['filename'].tolist()
+        parameter_file.close()
+        self.fov_model.setStringList(fov_list)
+        self.current_fov = fov_list[0]
 
     @Slot()
     def onNextMoleculeButtonClicked(self):
