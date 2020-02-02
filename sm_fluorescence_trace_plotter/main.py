@@ -161,6 +161,19 @@ class TraceInfoModel(QAbstractListModel):
         return None
 
     @Slot(int)
+    def onSheetComboActivated(self, index: int):
+        activated_sheet = self.sheet_model.data(self.sheet_model.createIndex(index, 0))
+        if activated_sheet != self.current_sheet:
+            self.current_sheet = activated_sheet
+            self.set_fov_list()
+            self.current_molecule = 1
+            self.set_data_list_storage()
+            self.dataChanged.emit(self.createIndex(2, 0),
+                                  self.createIndex(3, 0))
+            self.trace_model_should_change_file.emit()
+        return None
+
+    @Slot(int)
     def onFovComboActivated(self, index: int):
         activated_fov = self.fov_model.data(self.fov_model.createIndex(index, 0))
         if activated_fov != self.current_fov:

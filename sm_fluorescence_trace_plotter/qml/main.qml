@@ -117,6 +117,7 @@ Item {
                             model: traceInfoModel.sheetModel
                             textRole: 'display'
                             font.pointSize: 12
+                            onActivated: traceInfoModel.onSheetComboActivated(index)
                         }
                     }
 
