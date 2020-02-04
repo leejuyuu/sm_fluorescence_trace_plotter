@@ -5,8 +5,7 @@ Item {
     id: root
 
     property alias traceDataModel: mapper.model
-    property int timeColumnNumber: -1   //default: invalid data mapping
-    property color traceColor: 'black'
+    property int timeColumnNumber: -1   //default: invalid data mapping    
 
     ChartView {
         id: chart
@@ -67,7 +66,7 @@ Item {
             axisX: axisX
             axisY: axisY
             width: 1.5
-            color: root.traceColor
+            color: root.traceDataModel.get_row_color(root.timeColumnNumber)
             useOpenGL: true
 
             HXYModelMapper {

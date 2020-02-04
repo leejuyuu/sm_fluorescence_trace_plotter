@@ -267,6 +267,8 @@ class TraceModel(QAbstractTableModel):
 
     def map_data_to_model_storage(self):
         outlist = []
+        self.row_color = dict()
+        i = 0
         for channel in self.channels:
             channel_data = self.data_xr.sel(channel=channel)
             out = xr.concat((channel_data.time,
@@ -274,6 +276,8 @@ class TraceModel(QAbstractTableModel):
                              channel_data.viterbi_path.sel(state='position')),
                             dim='').values
             outlist.append(out)
+            self.row_color[i] = channel
+            i += 3
         # noinspection PyAttributeOutsideInit
         self.data_array = np.concatenate(outlist)
         return True
@@ -306,6 +310,10 @@ class TraceModel(QAbstractTableModel):
         topleft = self.createIndex(0, 0)
         bottomright = self.createIndex(self.rowCount(), self.columnCount())
         self.dataChanged.emit(topleft, bottomright)
+
+    @Slot(int, result=str)
+    def get_row_color(self, row: int = 0):
+        return self.row_color[row]
 
 
 if __name__ == '__main__':

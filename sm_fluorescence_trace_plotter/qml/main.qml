@@ -27,16 +27,14 @@ Item {
 
             // Somehow, when the variable name and the property name collide, the plot
             // won't show properly
-            traceDataModel: traceModel
-            traceColor: 'red'
-            timeColumnNumber: 0
+            traceDataModel: traceModel            
+            timeColumnNumber: 0            
         }
 
         TraceChart {
             Layout.fillWidth: true
             Layout.fillHeight: true
             traceDataModel: traceModel
-            traceColor: 'green'
             timeColumnNumber: 3
         }
 
@@ -44,7 +42,6 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             traceDataModel: traceModel
-            traceColor: 'blue'
             timeColumnNumber: 6
         }
 
