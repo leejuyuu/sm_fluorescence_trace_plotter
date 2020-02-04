@@ -5,6 +5,8 @@ import QtQuick.Controls 2.14
 
 Item {
     id: root
+    width: 1000
+    height: 600
 
     // For attracting focus when clicked to leave TextField focused state
     MouseArea {
