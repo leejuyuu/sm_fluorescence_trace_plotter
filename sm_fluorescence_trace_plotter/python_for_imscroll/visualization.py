@@ -26,6 +26,7 @@ def plot_one_trace_and_save(molecule_data: xr.Dataset, category: str = '',
 
     fig.text(0.04, 0.4, 'Intensity', ha='center', fontsize=16, rotation='vertical')
     plt.xlabel('time (s)', fontsize=16)
+    plt.rcParams['svg.fonttype'] = 'none'
     plt.savefig(save_dir / ('molecule{}.{}'.format(molecule_number, save_format)),
                 Transparent=True, dpi=300, bbox_inches='tight', format=save_format)
     plt.close()
