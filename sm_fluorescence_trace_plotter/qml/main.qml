@@ -184,6 +184,12 @@ Item {
                     text: 'next'
                     onClicked: traceInfoModel.onNextMoleculeButtonClicked()
                 }
+
+                Button {
+                    id: saveFigButton
+                    text: 'save'
+                    onClicked: traceModel.save_fig()
+                }
             }
         }
     }

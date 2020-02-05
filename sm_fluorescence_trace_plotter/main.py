@@ -29,7 +29,8 @@ from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
                             QStringListModel, QModelIndex, Signal, Slot,
                             Property, QObject)
 from sm_fluorescence_trace_plotter.python_for_imscroll import (imscrollIO,
-                                                               binding_kinetics)
+                                                               binding_kinetics,
+                                                               visualization)
 from collections import namedtuple
 import pandas as pd
 
@@ -314,6 +315,18 @@ class TraceModel(QAbstractTableModel):
     @Slot(int, result=str)
     def get_row_color(self, row: int = 0):
         return self.row_color[row]
+
+    @Slot()
+    def save_fig(self):
+        current_molecule = self.trace_info_model.current_molecule
+        category = self.get_category()
+        current_molecule_data = self.data_xr.sel(AOI=current_molecule)
+        fov_dir = self.datapath / self.trace_info_model.current_fov
+        if not fov_dir.exists():
+            fov_dir.mkdir()
+        visualization.plot_one_trace_and_save(current_molecule_data, category,
+                                              fov_dir, save_format='svg')
+        return None
 
 
 if __name__ == '__main__':
