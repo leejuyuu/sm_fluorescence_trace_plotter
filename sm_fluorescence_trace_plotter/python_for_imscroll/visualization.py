@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import os
 from pathlib import Path
 import pandas as pd
-import imscrollIO
-import binding_kinetics
+from sm_fluorescence_trace_plotter.python_for_imscroll import imscrollIO
+from sm_fluorescence_trace_plotter.python_for_imscroll import binding_kinetics
 import xarray as xr
 
 
