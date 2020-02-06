@@ -1,6 +1,6 @@
 #  Copyright (C) 2020 Tzu-Yu Lee, National Taiwan University
 #
-#  This file (main.py) is part of SM_fluorescence_trace_plotter.
+#  This file (trace_plotter.py) is part of SM_fluorescence_trace_plotter.
 #
 #  SM_fluorescence_trace_plotter is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
