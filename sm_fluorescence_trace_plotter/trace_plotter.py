@@ -53,7 +53,7 @@ class TraceInfoModel(QAbstractListModel):
         self.property_name_role = Qt.UserRole + 1
         self.value_role = Qt.UserRole + 2
         self.choose_delegate_role = Qt.UserRole + 3
-        self.dataChanged.connect(self.refresh, Qt.UniqueConnection)
+        self.dataChanged.connect(self.update_current_molecule, Qt.UniqueConnection)
 
     def rowCount(self, parent: QModelIndex = None) -> int:
         return len(self.data_list)
@@ -190,10 +190,10 @@ class TraceInfoModel(QAbstractListModel):
     def debug(self):
         pass
 
-    def read_sheet_model(self):
+    def _read_sheet_model(self):
         return self.sheet_model
 
-    def read_fov_model(self):
+    def _read_fov_model(self):
         return self.fov_model
 
     @Signal
