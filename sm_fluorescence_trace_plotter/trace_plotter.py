@@ -21,6 +21,7 @@
 import typing
 import sys
 import os
+from pathlib import Path
 import numpy as np
 import xarray as xr
 from PySide2.QtWidgets import QApplication
@@ -344,8 +345,8 @@ def main():
     rc.setContextProperty('traceInfoModel', trace_model.trace_info_model)
     rc.setContextProperty('traceModel', trace_model)
     rc.setContextProperty('aac', trace_info_model.sheet_model)
-    dirname = os.path.dirname(__file__)
-    view.setSource(QUrl(os.path.join(dirname, 'qml/main.qml')))
+    qml_path = Path(__file__).parent / 'qml/main.qml'
+    view.setSource(QUrl(str(qml_path)))
     view.show()
     sys.exit(app.exec_())
 
