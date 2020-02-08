@@ -91,7 +91,7 @@ class TraceInfoModel(QAbstractListModel):
         """See base class."""
         if index.isValid() and role == Qt.EditRole:
             row = index.row()
-            if row == 2: #molecule number
+            if row == 2:  # molecule number
                 value = int(value)
                 if value == self.current_molecule:
                     return True
