@@ -329,7 +329,8 @@ class TraceModel(QAbstractTableModel):
         return None
 
 
-if __name__ == '__main__':
+def main():
+    """Starts the GUI window after asking for the parameter file."""
     parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
     trace_info_model = TraceInfoModel(parameter_file_path)
     trace_model = TraceModel(trace_info_model)
@@ -347,3 +348,7 @@ if __name__ == '__main__':
     view.setSource(QUrl(os.path.join(dirname, 'qml/main.qml')))
     view.show()
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()
