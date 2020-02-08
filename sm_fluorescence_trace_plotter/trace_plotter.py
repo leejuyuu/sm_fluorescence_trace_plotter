@@ -20,10 +20,11 @@
 
 import typing
 import sys
-import os
+from collections import namedtuple
 from pathlib import Path
 import numpy as np
 import xarray as xr
+import pandas as pd
 from PySide2.QtWidgets import QApplication
 from PySide2.QtQuick import QQuickView
 from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
@@ -32,11 +33,8 @@ from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
 from sm_fluorescence_trace_plotter.python_for_imscroll import (imscrollIO,
                                                                binding_kinetics,
                                                                visualization)
-from collections import namedtuple
-import pandas as pd
 
 
-# noinspection PyProtectedMember,PyProtectedMember
 class TraceInfoModel(QAbstractListModel):
 
     def __init__(self, parameter_file_path):
@@ -72,8 +70,7 @@ class TraceInfoModel(QAbstractListModel):
             return self.data_list[index.row()].key
         elif role == self.value_role:
             return self.data_list[index.row()].value
-        else:
-            return None
+        return None
 
     def roleNames(self):
         """See base class."""
@@ -89,7 +86,8 @@ class TraceInfoModel(QAbstractListModel):
             return Qt.NoItemFlags
         return Qt.ItemIsEditable | Qt.ItemIsEnabled
 
-    def setData(self, index: QModelIndex, value: typing.Any, role: int = None) -> bool:
+    def setData(self, index: QModelIndex, value: typing.Any,
+                role: int = None) -> bool:
         """See base class."""
         if index.isValid() and role == Qt.EditRole:
             row = index.row()
@@ -106,17 +104,15 @@ class TraceInfoModel(QAbstractListModel):
             return True
         return False
 
-    def set_category(self, value: str) -> bool:
+    def set_category(self, value: str):
         """Set the molecule category entry in view to the input string value."""
         self.data_list[3] = self.data_list[3]._replace(value=value)
         index = self.createIndex(3, 0)
         self.dataChanged.emit(index, index)
-        return False
 
     def set_max_molecule_number(self, number: int):
         """Set the maximum molecule number to the input int. Used by TraceModel"""
         self.max_molecule = number
-        return None
 
     def refresh(self, topleft: QModelIndex, bottomright: QModelIndex,
                 role: list = None):
@@ -126,7 +122,6 @@ class TraceInfoModel(QAbstractListModel):
             if topleft.row() == 2:  # Molecule number
                 self.current_molecule = self.data_list[2].value
                 self.molecule_changed.emit()
-        return None
 
     def set_data_list_storage(self, molecule: int = None):
         """Setup the data storage for this list model."""
@@ -138,7 +133,6 @@ class TraceInfoModel(QAbstractListModel):
                           entry('Field of view', self.current_fov, 3),
                           entry('Molecule', molecule, 1),
                           entry('Category', '', 0)]
-        return None
 
     def set_fov_list(self, parameter_file: pd.ExcelFile = None):
         """Set the FOV string list model from the given parameter file. An
@@ -156,14 +150,12 @@ class TraceInfoModel(QAbstractListModel):
         """Set molecule number entry to (current value + 1)"""
         molecule_index = self.createIndex(2, 0)
         self.setData(molecule_index, self.current_molecule + 1, Qt.EditRole)
-        return None
 
     @Slot()
     def onPreviousMoleculeButtonClicked(self):
         """Set molecule number entry to (current value - 1)"""
         molecule_index = self.createIndex(2, 0)
         self.setData(molecule_index, self.current_molecule - 1, Qt.EditRole)
-        return None
 
     @Slot(int)
     def onSheetComboActivated(self, index: int):
@@ -180,7 +172,6 @@ class TraceInfoModel(QAbstractListModel):
             self.dataChanged.emit(self.createIndex(2, 0),
                                   self.createIndex(3, 0))
             self.trace_model_should_change_file.emit()
-        return None
 
     @Slot(int)
     def onFovComboActivated(self, index: int):
@@ -196,7 +187,6 @@ class TraceInfoModel(QAbstractListModel):
             self.dataChanged.emit(self.createIndex(2, 0),
                                   self.createIndex(3, 0))
             self.trace_model_should_change_file.emit()
-        return None
 
     @Slot()
     def debug(self):
@@ -256,10 +246,9 @@ class TraceModel(QAbstractTableModel):
             return aoi_data_array[row, column].item()
         elif role == Qt.EditRole:
             return aoi_data_array[row, column].item()
-        else:
-            return None
+        return None
 
-    def get_category(self) -> str:
+    def get_category(self) -> typing.Union[str, None]:
         """Searches the current molecule in the AOI_catories dict and return the
         category (key). If the molecule is not found return None."""
         molecule = self.trace_info_model.current_molecule
@@ -278,10 +267,9 @@ class TraceModel(QAbstractTableModel):
                     category = key
                     found = True
                     break
-        if not found:
-            return None
-        else:
+        if found:
             return category
+        return None
 
     def map_data_to_model_storage(self):
         """Map the xarray dataset to np 2D array which can be read by this model.
@@ -302,9 +290,7 @@ class TraceModel(QAbstractTableModel):
             outlist.append(out)
             self.row_color[i] = channel
             i += 3
-        # noinspection PyAttributeOutsideInit
         self.data_array = np.concatenate(outlist)
-        return True
 
     def change_molecule(self):
         """Notifies the data model that the current molecule is changed.
@@ -314,7 +300,6 @@ class TraceModel(QAbstractTableModel):
         category = self.get_category()
         self.trace_info_model.set_category(category)
         self.notify_whole_table_changed()
-        return None
 
     def set_data_storage(self):
         """Reads trace data from _all.json file and store as attributes. Updates
@@ -337,7 +322,6 @@ class TraceModel(QAbstractTableModel):
         Connected to the TraceInfoModel.trace_model_should_change_file signal."""
         self.set_data_storage()
         self.notify_whole_table_changed()
-        return None
 
     def notify_whole_table_changed(self):
         """Emits dataChanged signal on the whole table to update the view """
@@ -346,7 +330,7 @@ class TraceModel(QAbstractTableModel):
         self.dataChanged.emit(topleft, bottomright)
 
     @Slot(int, result=str)
-    def get_row_color(self, row: int = 0):
+    def get_row_color(self, row: int = 0) -> str:
         """Returns the corresponding channel name (color) to the input row
         number of the table model."""
         return self.row_color[row]
@@ -362,7 +346,6 @@ class TraceModel(QAbstractTableModel):
             fov_dir.mkdir()
         visualization.plot_one_trace_and_save(current_molecule_data, category,
                                               fov_dir, save_format='svg')
-        return None
 
 
 def main():
@@ -376,10 +359,10 @@ def main():
         app = QApplication([])
     view = QQuickView()
     view.setResizeMode(QQuickView.SizeRootObjectToView)
-    rc = view.rootContext()
-    rc.setContextProperty('traceInfoModel', trace_model.trace_info_model)
-    rc.setContextProperty('traceModel', trace_model)
-    rc.setContextProperty('aac', trace_info_model.sheet_model)
+    root_context = view.rootContext()
+    root_context.setContextProperty('traceInfoModel',
+                                    trace_model.trace_info_model)
+    root_context.setContextProperty('traceModel', trace_model)
     qml_path = Path(__file__).parent / 'qml/main.qml'
     view.setSource(QUrl(str(qml_path)))
     view.show()
