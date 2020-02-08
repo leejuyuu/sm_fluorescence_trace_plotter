@@ -214,8 +214,8 @@ class TraceInfoModel(QAbstractListModel):
     def trace_model_should_change_file(self):
         pass
 
-    sheetModel = Property(QObject, read_sheet_model, notify=sheet_model_changed)
-    fovModel = Property(QObject, read_fov_model, notify=fov_model_changed)
+    sheetModel = Property(QObject, _read_sheet_model, notify=sheet_model_changed)
+    fovModel = Property(QObject, _read_fov_model, notify=fov_model_changed)
 
 
 class TraceModel(QAbstractTableModel):
