@@ -14,7 +14,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with SM_fluorescence_trace_plotter.  If not, see <https://www.gnu.org/licenses/>.
-#
 
 """main function"""
 
