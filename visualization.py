@@ -67,7 +67,7 @@ def main():
     sheet = 'L1_03'
     dfs = pd.read_excel(xlspath, sheet_name=sheet)
     datapath = imscrollIO.def_data_path()
-    im_format = 'svg'
+    im_format = 'png'
     nFiles = dfs.shape[0]
     for iFile in range(0, nFiles):
         filestr = dfs.filename[iFile]
