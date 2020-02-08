@@ -15,6 +15,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with python_for_imscroll.  If not, see <https://www.gnu.org/licenses/>.
 
+"""Visualization module handles single-molecule fluorescence data visualization"""
+
 import matplotlib.pyplot as plt
 import os
 from pathlib import Path
@@ -26,6 +28,17 @@ import xarray as xr
 
 def plot_one_trace_and_save(molecule_data: xr.Dataset, category: str = '',
                             save_dir: Path = Path(), save_format: str = 'svg'):
+    """Take dataset of one molecule and plot time trajectory.
+
+    Each subplot corresponds to one channel (color).
+    Input:
+        molecule_data: Dataset of a certain molecule, should contain time and
+        channel coordinates, with 'intensity' and 'viterbi_path' variables.
+
+        category: The category of that trace.
+        save_dir: The directory to save the image.
+        save_format: The image file format to save.
+    """
     molecule_number = int(molecule_data.AOI)
     fig = plt.figure(figsize=(10, 5))
     plt.suptitle('molecule {} ({})'.format(molecule_number, category), fontsize=14)
@@ -51,6 +64,7 @@ def plot_one_trace_and_save(molecule_data: xr.Dataset, category: str = '',
 
 
 def main():
+    """Plot traces from every molecule in the dataset and save them as png files."""
     xlspath = Path('/run/media/tzu-yu/linuxData/Research/PriA_project/analysis_result/20191106//20191106parameterFile.xlsx')
     sheet = 'L1_03'
     dfs = pd.read_excel(xlspath, sheet_name=sheet)
