@@ -59,20 +59,11 @@ class TraceInfoModel(QAbstractListModel):
     def rowCount(self, parent: QModelIndex = None) -> int:
         return len(self.data_list)
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
-        if orientation == Qt.Vertical:
-            return self.data_list[section].key
-        else:
-            return None
-
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if role == Qt.DisplayRole:
             return self.data_list[index.row()].value
         elif role == Qt.EditRole:
             return self.data_list[index.row()].value
-        elif role == Qt.BackgroundRole:
-            # not finished
-            return 0
         elif role == self.choose_delegate_role:
             return self.data_list[index.row()].chooseDelegate
         elif role == self.property_name_role:
