@@ -50,9 +50,9 @@ def main():
             continue
         data = all_data['data']
         print(filestr + ' loaded')
-
-        if not os.path.isdir(datapath / filestr):
-            os.mkdir(datapath / filestr)
+        save_dir = datapath / filestr
+        if not save_dir.is_dir():
+            save_dir.mkdir()
         AOI_dict = dict(AOI_categories)
         for key, value in AOI_categories.items():
             if key == 'analyzable':
