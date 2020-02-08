@@ -1,11 +1,6 @@
-
-/.idea/workspace/.xml
-
-\.idea/workspace\.xml
-
 .idea/workspace.xml
 
-venv/
+.venv/
 
 __pycache__/
 
