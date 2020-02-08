@@ -118,8 +118,8 @@ class TraceInfoModel(QAbstractListModel):
                                 role: list = None):
         """Connected to self.dataChanged signal. Update the current molecule
         number if it is changed."""
-        if topleft == bottomright:
-            if topleft.row() == 2:  # Molecule number
+        if topleft == bottomright:  # Single element changed
+            if topleft.row() == 2:  # Molecule number entry
                 self.current_molecule = self.data_list[2].value
                 self.molecule_changed.emit()
 
