@@ -57,9 +57,11 @@ class TraceInfoModel(QAbstractListModel):
         self.dataChanged.connect(self.update_current_molecule, Qt.UniqueConnection)
 
     def rowCount(self, parent: QModelIndex = None) -> int:
+        """See base class."""
         return len(self.data_list)
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
+        """See base class."""
         if role == Qt.DisplayRole:
             return self.data_list[index.row()].value
         elif role == Qt.EditRole:
@@ -74,6 +76,7 @@ class TraceInfoModel(QAbstractListModel):
             return None
 
     def roleNames(self):
+        """See base class."""
         role_names = super(TraceInfoModel, self).roleNames()
         role_names[self.choose_delegate_role] = b'chooseDelegate'
         role_names[self.property_name_role] = b'propertyName'
@@ -81,11 +84,13 @@ class TraceInfoModel(QAbstractListModel):
         return role_names
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        """See base class."""
         if not index.isValid():
             return Qt.NoItemFlags
         return Qt.ItemIsEditable | Qt.ItemIsEnabled
 
     def setData(self, index: QModelIndex, value: typing.Any, role: int = None) -> bool:
+        """See base class."""
         if index.isValid() and role == Qt.EditRole:
             row = index.row()
             if row == 2: #molecule number
@@ -102,19 +107,21 @@ class TraceInfoModel(QAbstractListModel):
         return False
 
     def set_category(self, value: str) -> bool:
+        """Set the molecule category entry in view to the input string value."""
         self.data_list[3] = self.data_list[3]._replace(value=value)
         index = self.createIndex(3, 0)
         self.dataChanged.emit(index, index)
         return False
 
     def set_max_molecule_number(self, number: int):
+        """Set the maximum molecule number to the input int. Used by TraceModel"""
         self.max_molecule = number
         return None
 
     def refresh(self, topleft: QModelIndex, bottomright: QModelIndex,
                 role: list = None):
-        if role is None:
-            role = list()
+        """Connected to self.dataChanged signal. Update the current molecule
+        number if it is changed."""
         if topleft == bottomright:
             if topleft.row() == 2:  # Molecule number
                 self.current_molecule = self.data_list[2].value
@@ -122,6 +129,7 @@ class TraceInfoModel(QAbstractListModel):
         return None
 
     def set_data_list_storage(self, molecule: int = None):
+        """Setup the data storage for this list model."""
         if molecule is None:
             molecule = self.current_molecule
         # choose delegate enumeration is defined in main.qml
@@ -133,6 +141,8 @@ class TraceInfoModel(QAbstractListModel):
         return None
 
     def set_fov_list(self, parameter_file: pd.ExcelFile = None):
+        """Set the FOV string list model from the given parameter file. An
+        already opened ExcelFile can be passed as an argument."""
         if parameter_file is None:
             parameter_file = pd.ExcelFile(self.parameter_file_path)
         dfs = parameter_file.parse(sheet_name=self.current_sheet)
@@ -143,18 +153,24 @@ class TraceInfoModel(QAbstractListModel):
 
     @Slot()
     def onNextMoleculeButtonClicked(self):
+        """Set molecule number entry to (current value + 1)"""
         molecule_index = self.createIndex(2, 0)
         self.setData(molecule_index, self.current_molecule + 1, Qt.EditRole)
         return None
 
     @Slot()
     def onPreviousMoleculeButtonClicked(self):
+        """Set molecule number entry to (current value - 1)"""
         molecule_index = self.createIndex(2, 0)
         self.setData(molecule_index, self.current_molecule - 1, Qt.EditRole)
         return None
 
     @Slot(int)
     def onSheetComboActivated(self, index: int):
+        """Changes current sheet to the selected value in view and reinitialize
+        self. Notify the TraceModel to change its data.
+
+        index: The index of the selected item in the ComboBox component."""
         activated_sheet = self.sheet_model.data(self.sheet_model.createIndex(index, 0))
         if activated_sheet != self.current_sheet:
             self.current_sheet = activated_sheet
@@ -168,6 +184,10 @@ class TraceInfoModel(QAbstractListModel):
 
     @Slot(int)
     def onFovComboActivated(self, index: int):
+        """Changes current FOV to the selected value in view and reinitialize
+        self. Notify the TraceModel to change its data.
+
+        index: The index of the selected item in the ComboBox component."""
         activated_fov = self.fov_model.data(self.fov_model.createIndex(index, 0))
         if activated_fov != self.current_fov:
             self.current_fov = activated_fov
@@ -220,12 +240,15 @@ class TraceModel(QAbstractTableModel):
         self.set_data_storage()
 
     def rowCount(self, parent: QModelIndex = None) -> int:
+        """See base class."""
         return self.data_array.shape[0]
 
     def columnCount(self, parent: QModelIndex = None) -> int:
+        """See base class."""
         return self.data_array.shape[1]
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
+        """See base class."""
         aoi_data_array = self.data_array[:, :, self.trace_info_model.current_molecule-1]
         row = index.row()
         column = index.column()
@@ -237,6 +260,8 @@ class TraceModel(QAbstractTableModel):
             return None
 
     def get_category(self) -> str:
+        """Searches the current molecule in the AOI_catories dict and return the
+        category (key). If the molecule is not found return None."""
         molecule = self.trace_info_model.current_molecule
         found = False
         for key, value in self.AOI_categories.items():
@@ -259,6 +284,12 @@ class TraceModel(QAbstractTableModel):
             return category
 
     def map_data_to_model_storage(self):
+        """Map the xarray dataset to np 2D array which can be read by this model.
+
+        Reorganize the time, intensity, and viterbi path in the data xarray
+        to np array with columns correspond to times and row indices corresponds
+        to the repetition of [time, intensity, viterbi path]. The order of
+        channels is specified in the dict row_color."""
         outlist = []
         self.row_color = dict()
         i = 0
@@ -276,12 +307,18 @@ class TraceModel(QAbstractTableModel):
         return True
 
     def change_molecule(self):
+        """Notifies the data model that the current molecule is changed.
+
+        Connected to the TraceInfoModel.molecule_changed signal. Also updates
+        the category entry."""
         category = self.get_category()
         self.trace_info_model.set_category(category)
         self.notify_whole_table_changed()
         return None
 
     def set_data_storage(self):
+        """Reads trace data from _all.json file and store as attributes. Updates
+        the model to the loaded data."""
         try:
             all_data, self.AOI_categories = binding_kinetics.load_all_data(
                 self.datapath / (self.trace_info_model.current_fov + '_all.json'))
@@ -295,21 +332,28 @@ class TraceModel(QAbstractTableModel):
         self.trace_info_model.set_max_molecule_number(len(self.data_xr.AOI))
 
     def change_file(self):
+        """Updates the data model when switching to another data file.
+
+        Connected to the TraceInfoModel.trace_model_should_change_file signal."""
         self.set_data_storage()
         self.notify_whole_table_changed()
         return None
 
     def notify_whole_table_changed(self):
+        """Emits dataChanged signal on the whole table to update the view """
         topleft = self.createIndex(0, 0)
         bottomright = self.createIndex(self.rowCount(), self.columnCount())
         self.dataChanged.emit(topleft, bottomright)
 
     @Slot(int, result=str)
     def get_row_color(self, row: int = 0):
+        """Returns the corresponding channel name (color) to the input row
+        number of the table model."""
         return self.row_color[row]
 
     @Slot()
     def save_fig(self):
+        """Save matplotlib traces plot of the current molecule as SVG file."""
         current_molecule = self.trace_info_model.current_molecule
         category = self.get_category()
         current_molecule_data = self.data_xr.sel(AOI=current_molecule)
