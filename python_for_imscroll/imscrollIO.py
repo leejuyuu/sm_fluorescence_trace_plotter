@@ -1,12 +1,29 @@
+#  Copyright (C) 2020 Tzu-Yu Lee, National Taiwan University
+#
+#  This file (imscrollIO.py) is part of python_for_imscroll.
+#
+#  python_for_imscroll is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  python_for_imscroll is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with python_for_imscroll.  If not, see <https://www.gnu.org/licenses/>.
+
+import sys
+import json
 from typing import List
+from pathlib import Path
 import scipy.io as sio
 import numpy as np
-from pathlib import Path
 import xarray as xr
-import json
 from PySide2.QtWidgets import QApplication, QFileDialog, QWidget
 from PySide2.QtCore import QTimer
-import sys
 
 
 def import_everything(filestr, datapath):
