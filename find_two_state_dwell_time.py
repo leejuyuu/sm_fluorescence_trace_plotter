@@ -1,39 +1,30 @@
-import numpy as np
+from typing import List
 from pathlib import Path
+import numpy as np
 import pandas as pd
-import imscrollIO
-import binding_kinetics
-import math
-from scipy import optimize
 from matplotlib import pyplot as plt
 from lifelines import KaplanMeierFitter, ExponentialFitter
+import imscrollIO
+import binding_kinetics
 
 
-def single_exponential(x, a):
-    return a * np.exp(-a * x)
-
-
-def main():
-    # xlspath = Path('D:/TYL/PriA_project/Analysis_Results/20190917/20190917parameterFile.xlsx')
-    # xlspath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190917/20190917parameterFile.xlsx')
-    xlspath = Path('/run/media/tzu-yu/linuxData/Research/PriA_project/analysis_result/20191204/20191204parameterFile.xlsx')
+def find_two_state_dwell_time(parameter_file_path: Path, sheet_list: List[str]):
     datapath = imscrollIO.def_data_path()
-    # datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
-    sheet_list = ['L4_03', 'L4_04', 'L5_01', 'L5_02']
     specified_n_state = 1
     state_list = ['low', 'high']
     on_off_str = ['on', 'off']
     obs_off_str = ['obs', 'off']
     im_format = 'svg'
     for i_sheet in sheet_list:
-        dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
+        dfs = pd.read_excel(parameter_file_path, sheet_name=i_sheet)
         nFiles = dfs.shape[0]
         interval_list = []
         n_good_traces = 0
         for iFile in range(0, nFiles):
             filestr = dfs.filename[iFile]
             try:
-                all_data, AOI_categories = binding_kinetics.load_all_data(datapath / (filestr + '_all.json'))
+                all_data, AOI_categories = binding_kinetics.load_all_data(datapath
+                                                                          / (filestr + '_all.json'))
             except FileNotFoundError:
                 print('{} file not found'.format(filestr))
                 continue
@@ -54,11 +45,9 @@ def main():
             kmf.fit(dwells.duration, dwells.event_observed)
             exf.fit(dwells.duration, dwells.event_observed)
 
-
             ax = kmf.plot()
             exf.plot_survival_function(ax=ax, ci_show=False)
             ax.get_legend().remove()
-
 
             plt.xlabel(r'$\tau_{{{}}}$ (s)'.format(on_off_str[i]), fontsize=16)
             plt.ylabel('probability', fontsize=16)
@@ -77,6 +66,13 @@ def main():
             plt.savefig(save_fig_path, format=im_format, Transparent=True,
                         dpi=300, bbox_inches='tight')
             plt.close()
+
+
+def main():
+    """main function"""
+    xlsx_parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
+    sheet_list = imscrollIO.input_sheets_for_analysis()
+    find_two_state_dwell_time(xlsx_parameter_file_path, sheet_list)
 
 
 if __name__ == '__main__':
