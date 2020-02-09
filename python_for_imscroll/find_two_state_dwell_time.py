@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from lifelines import KaplanMeierFitter, ExponentialFitter
-import imscrollIO
-import binding_kinetics
+from python_for_imscroll import imscrollIO
+from python_for_imscroll import binding_kinetics
 
 
 def find_two_state_dwell_time(parameter_file_path: Path, sheet_list: List[str]):

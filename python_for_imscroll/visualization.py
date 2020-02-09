@@ -21,8 +21,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
-import imscrollIO
-import binding_kinetics
+from python_for_imscroll import imscrollIO
+from python_for_imscroll import binding_kinetics
 
 
 def plot_one_trace_and_save(molecule_data: xr.Dataset, category: str = '',

@@ -20,8 +20,8 @@
 from typing import List
 from pathlib import Path
 import pandas as pd
-import imscrollIO
-import binding_kinetics as bk
+from python_for_imscroll import imscrollIO
+from python_for_imscroll import binding_kinetics as bk
 
 
 def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str]):

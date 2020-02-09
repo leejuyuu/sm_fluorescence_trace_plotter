@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 import pandas as pd
-import imscrollIO
-import binding_kinetics
+from python_for_imscroll import imscrollIO
+from python_for_imscroll import binding_kinetics
 import math
 from scipy import optimize
 from matplotlib import pyplot as plt

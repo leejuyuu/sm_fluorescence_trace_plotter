@@ -21,7 +21,7 @@ for further analysis in python."""
 from typing import List
 from pathlib import Path
 import pandas as pd
-import imscrollIO
+from python_for_imscroll import imscrollIO
 
 
 def group_imscroll_data_to_xr_json(xlspath: Path, sheet_list: List[str]):
