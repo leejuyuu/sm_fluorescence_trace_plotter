@@ -44,6 +44,31 @@ def qt_getfile():
     return datapath
 
 
+def qt_save_file():
+    # There are still some problem need to solve!
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+    w = QWidget()
+    FILTERS = ('SVG Images (*.svg)', '.svg'
+               'PNG Images (*.png)')
+    filter_string = ''
+    for file_filter in FILTERS:
+        filter_string += (file_filter + ';;')
+    filter_string = filter_string[:-2]
+
+    file_path, selected_filter = QFileDialog.getSaveFileName(w, caption='Save to file',
+                                            filter=filter_string)
+    file_path = Path(file_path)
+    # if file_path.suffix == '':
+    #     if selected_filter ==
+    #     file_path.with_suffix()
+    # Let the event loop terminate after 1 ms and quit QApplication
+    QTimer.singleShot(1, app.quit)
+    app.exec_()
+    return file_path
+
+
 def import_channels_info(datapath, filestr):
     channels_info_file_path = datapath / (filestr + '_channels.dat')
     channels_info_file = sio.loadmat(channels_info_file_path)
