@@ -1,14 +1,38 @@
+#  Copyright (C) 2020 Tzu-Yu Lee, National Taiwan University
+#
+#  This file (categorize_binding_traces_script.py) is part of python_for_imscroll.
+#
+#  python_for_imscroll is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  python_for_imscroll is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with python_for_imscroll.  If not, see <https://www.gnu.org/licenses/>.
 
+"""Categorize_binding_traces_script """
+
+from typing import List
+from pathlib import Path
 import pandas as pd
 import imscrollIO
 import binding_kinetics as bk
-from pathlib import Path
 
 
-def categorize_binding_traces(parameter_file_path, sheet_list):
+def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str]):
+    """Categorize traces into bad and analyzable categories.
+
+    Run through each entry in the specified sheets in the parameter file.
+    Args:
+        parameter_file_path: The path of the xlsx parameter file
+        sheet_list: A list of sheet names to be analyzed.
+    """
     datapath = imscrollIO.def_data_path()
-    # datapath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911imscroll')
-
     for i_sheet in sheet_list:
         dfs = pd.read_excel(parameter_file_path, sheet_name=i_sheet)
         nFiles = dfs.shape[0]
@@ -39,10 +63,14 @@ def categorize_binding_traces(parameter_file_path, sheet_list):
             bk.save_all_data(all_data, AOI_categories, datapath / (filestr + '_all.json'))
 
             print(filestr + ' finished')
-    return None
 
 
-if __name__ == '__main__':
+def main():
+    """main function"""
     xlsx_parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
     sheet_list = imscrollIO.input_sheets_for_analysis()
     categorize_binding_traces(xlsx_parameter_file_path, sheet_list)
+
+
+if __name__ == '__main__':
+    main()
