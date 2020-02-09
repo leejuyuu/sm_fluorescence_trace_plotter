@@ -1,3 +1,4 @@
+from typing import List
 import scipy.io as sio
 import numpy as np
 from pathlib import Path
@@ -205,7 +206,8 @@ def load_data_from_json(path):
     return data
 
 
-def get_xlsx_parameter_file_path():
+def get_xlsx_parameter_file_path() -> Path:
+    """Opens a window to select the xlsx parameter file."""
     while True:
         xlsx_parameter_file_path = qt_getfile()
         print(xlsx_parameter_file_path)
@@ -214,3 +216,17 @@ def get_xlsx_parameter_file_path():
             xlsx_parameter_file_path = Path(xlsx_parameter_file_path)
             break
     return xlsx_parameter_file_path
+
+
+def input_sheets_for_analysis() -> List[str]:
+    """Request user input in console for list of sheets to be analyzed.
+
+    The input format should be 'SHEET1, SHEET2, SHEET3, '..."""
+    while True:
+        input_str = input('Enter the sheets to be analyzed: ')
+        sheet_list_out = input_str.split(', ')
+        print(sheet_list_out)
+        yes_no = input('Confirm [y/n]: ')
+        if yes_no == 'y':
+            break
+    return sheet_list_out

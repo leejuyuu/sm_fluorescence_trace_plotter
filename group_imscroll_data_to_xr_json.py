@@ -26,18 +26,6 @@ def group_imscroll_data_to_xr_json(xlspath, sheet_list):
 
 
 if __name__ == '__main__':
-    while True:
-        xlsx_parameter_file_path = imscrollIO.qt_getfile()
-        print(xlsx_parameter_file_path)
-        yes_no = input('Confirm [y/n]: ')
-        if yes_no == 'y':
-            xlsx_parameter_file_path = Path(xlsx_parameter_file_path)
-            break
-    while True:
-        input_str = input('Enter the sheets to be analyzed: ')
-        sheet_list_out = input_str.split(', ')
-        print(sheet_list_out)
-        yes_no2 = input('Confirm [y/n]: ')
-        if yes_no2 == 'y':
-            break
-    group_imscroll_data_to_xr_json(xlsx_parameter_file_path, sheet_list_out)
+    xlsx_parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
+    sheet_list = imscrollIO.input_sheets_for_analysis()
+    group_imscroll_data_to_xr_json(xlsx_parameter_file_path, sheet_list)

@@ -43,19 +43,6 @@ def categorize_binding_traces(parameter_file_path, sheet_list):
 
 
 if __name__ == '__main__':
-    # xlspath = Path('/mnt/linuxData/Research/PriA_project/analysis_result/20190911/20190911parameterFile.xlsx')
-    while True:
-        xlsx_parameter_file_path = imscrollIO.qt_getfile()
-        print(xlsx_parameter_file_path)
-        yes_no = input('Confirm [y/n]: ')
-        if yes_no == 'y':
-            xlsx_parameter_file_path = Path(xlsx_parameter_file_path)
-            break
-    while True:
-        input_str = input('Enter the sheets to be analyzed: ')
-        sheet_list_out = input_str.split(', ')
-        print(sheet_list_out)
-        yes_no2 = input('Confirm [y/n]: ')
-        if yes_no2 == 'y':
-            break
-    categorize_binding_traces(xlsx_parameter_file_path, sheet_list_out)
+    xlsx_parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
+    sheet_list = imscrollIO.input_sheets_for_analysis()
+    categorize_binding_traces(xlsx_parameter_file_path, sheet_list)
