@@ -34,25 +34,10 @@ def find_two_state_dwell_time(parameter_file_path: Path, sheet_list: List[str]):
 
     im_format = 'svg'
     for i_sheet in sheet_list:
-        dfs = pd.read_excel(parameter_file_path, sheet_name=i_sheet)
-        nFiles = dfs.shape[0]
-        interval_list = []
-        n_good_traces = 0
-        for iFile in range(0, nFiles):
-            filestr = dfs.filename[iFile]
-            try:
-                all_data, AOI_categories = binding_kinetics.load_all_data(datapath
-                                                                          / (filestr + '_all.json'))
-            except FileNotFoundError:
-                print('{} file not found'.format(filestr))
-                continue
-
-            print(filestr + ' loaded')
-            if state_category in AOI_categories['analyzable']:
-                aoi_list = AOI_categories['analyzable'][state_category]
-                n_good_traces += len(aoi_list)
-                interval_list.append(all_data['intervals'].sel(AOI=aoi_list))
-        max_time = all_data['data'].time.values.max()
+        interval_list, n_good_traces, max_time = read_interval_data(parameter_file_paths,
+                                                                    datapath,
+                                                                    i_sheet,
+                                                                    state_category)
         for i, item in enumerate(state_list):
             dwells = binding_kinetics.extract_dwell_time(interval_list, i)
             if len(dwells.duration) == 0:
@@ -95,6 +80,32 @@ def plot_survival_curve(kmf: KaplanMeierFitter,
     plt.savefig(save_path, format='svg', Transparent=True,
                 dpi=300, bbox_inches='tight')
     plt.close()
+
+
+def read_interval_data(parameter_file_path: Path,
+                       datapath: Path,
+                       sheet: str,
+                       state_category: str):
+    dfs = pd.read_excel(parameter_file_path, sheet_name=sheet)
+    n_files = dfs.shape[0]
+    interval_list = []
+    n_good_traces = 0
+    for iFile in range(0, n_files):
+        filestr = dfs.filename[iFile]
+        try:
+            all_data, AOI_categories = binding_kinetics.load_all_data(datapath
+                                                                          / (filestr + '_all.json'))
+        except FileNotFoundError:
+            print('{} file not found'.format(filestr))
+            continue
+
+        print(filestr + ' loaded')
+        if state_category in AOI_categories['analyzable']:
+            aoi_list = AOI_categories['analyzable'][state_category]
+            n_good_traces += len(aoi_list)
+            interval_list.append(all_data['intervals'].sel(AOI=aoi_list))
+    max_time = all_data['data'].time.values.max()
+    return interval_list, n_good_traces, max_time
 
 
 def main():
