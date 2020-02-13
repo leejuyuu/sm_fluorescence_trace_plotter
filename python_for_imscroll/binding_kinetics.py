@@ -264,6 +264,18 @@ def extract_dwell_time(intervals_list, state):
     return out
 
 
+def extract_first_binding_time(intervals_list):
+    i_file_intervals = intervals_list[0]
+    first_intervals = i_file_intervals.sel(interval_number=0)
+    first_binding_intervals = first_intervals.where(first_intervals.state_number == 0,
+                                                    drop=True)
+    intervals_after_binding = i_file_intervals.sel(interval_number=1,
+                                                   AOI=first_binding_intervals.AOI)
+    dwells = first_binding_intervals['duration'].to_dataset()
+    dwells['event_observed'] = intervals_after_binding.state_number == 1
+    return dwells
+
+
 def get_channel_data(data, channel):
     channel_data = data.sel(channel=channel)
     channel_data = channel_data.assign_coords(channel=[channel])
