@@ -193,6 +193,7 @@ def import_interval_results(data):
 
 
 def import_viterbi_paths(data):
+    data.attrs['datapath'] = Path(data.datapath)
     eb_file_path = data.datapath / (data.filestr + '_eb.dat')
     eb_file = sio.loadmat(eb_file_path)['eb_result']
     viterbi_path_list = []
