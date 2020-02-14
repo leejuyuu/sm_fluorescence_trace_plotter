@@ -61,23 +61,30 @@ def find_first_dwell_time(parameter_file_path: Path, sheet_list: List[str],
     state_category = '1'
     im_format = 'svg'
     for i_sheet in sheet_list:
+        zero_state_interval_list = read_interval_data(parameter_file_path,
+                                                  datapath,
+                                                  i_sheet,
+                                                  '0',
+                                                  first_only=True)[0]
+        n_right_censored = len(zero_state_interval_list[0].AOI)
         interval_list, n_good_traces, max_time = read_interval_data(parameter_file_path,
                                                                     datapath,
                                                                     i_sheet,
                                                                     state_category,
                                                                     first_only=True)
         dwells = binding_kinetics.extract_first_binding_time(interval_list)
-        dwells['duration'] += time_offset
+        dwells['duration'] += time_offset        
         if len(dwells.duration) == 0:
             print('no low state found')
             continue
         kmf = KaplanMeierFitter()
         exf = ExponentialFitter()
-        kmf.fit(dwells.duration, dwells.event_observed)
-        exf.fit(dwells.duration, dwells.event_observed)
+        
+        kmf.fit_left_censoring(dwells.duration, dwells.event_observed)
+        exf.fit_left_censoring(dwells.duration, dwells.event_observed)
         n_event = np.count_nonzero(dwells.event_observed)
         n_censored = len(dwells.event_observed) - n_event
-        stat_counts = (n_event, n_censored, n_good_traces)
+        stat_counts = (n_event, n_censored, n_right_censored)
         save_fig_path = datapath / (i_sheet + '_' + '_first_dwell' + '.' + im_format)
         plot_survival_curve(kmf, exf, 0, stat_counts, save_fig_path,
                             x_right_lim=max_time)
@@ -91,7 +98,7 @@ def plot_survival_curve(kmf: KaplanMeierFitter,
                         x_right_lim: float = None):
     on_off_str = ['on', 'off']
     obs_off_str = ['obs', 'off']
-    ax = kmf.plot()
+    ax = kmf.plot_survival_function()
     exf.plot_survival_function(ax=ax, ci_show=False)
     ax.get_legend().remove()
     plt.xlabel(r'$\tau_{{{}}}$ (s)'.format(on_off_str[state]), fontsize=16)
@@ -145,7 +152,7 @@ def main():
     xlsx_parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
     sheet_list = imscrollIO.input_sheets_for_analysis()
     # find_two_state_dwell_time(xlsx_parameter_file_path, sheet_list)
-    find_first_dwell_time(xlsx_parameter_file_path, sheet_list)
+    find_first_dwell_time(xlsx_parameter_file_path, sheet_list, time_offset=120)
 
 
 if __name__ == '__main__':
