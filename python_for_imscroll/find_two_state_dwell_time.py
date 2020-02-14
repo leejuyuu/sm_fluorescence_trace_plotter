@@ -64,7 +64,8 @@ def find_first_dwell_time(parameter_file_path: Path, sheet_list: List[str],
         interval_list, n_good_traces, max_time = read_interval_data(parameter_file_path,
                                                                     datapath,
                                                                     i_sheet,
-                                                                    state_category)
+                                                                    state_category,
+                                                                    first_only=True)
         dwells = binding_kinetics.extract_first_binding_time(interval_list)
         dwells['duration'] += time_offset
         if len(dwells.duration) == 0:
@@ -112,9 +113,13 @@ def plot_survival_curve(kmf: KaplanMeierFitter,
 def read_interval_data(parameter_file_path: Path,
                        datapath: Path,
                        sheet: str,
-                       state_category: str):
+                       state_category: str,
+                       first_only: bool = False):
     dfs = pd.read_excel(parameter_file_path, sheet_name=sheet)
-    n_files = dfs.shape[0]
+    if first_only:
+        n_files = 1
+    else:
+        n_files = dfs.shape[0]
     interval_list = []
     n_good_traces = 0
     for iFile in range(0, n_files):
