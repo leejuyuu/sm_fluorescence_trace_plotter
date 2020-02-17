@@ -21,6 +21,11 @@ from typing import List, Tuple
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import xarray as xr
+import rpy2.robjects as robjects
+import rpy2.robjects.pandas2ri
+from rpy2.robjects.packages import importr
+from rpy2.robjects.conversion import localconverter
 from matplotlib import pyplot as plt
 from lifelines import KaplanMeierFitter, ExponentialFitter
 from python_for_imscroll import imscrollIO
@@ -56,16 +61,16 @@ def find_two_state_dwell_time(parameter_file_path: Path, sheet_list: List[str]):
 
 
 def find_first_dwell_time(parameter_file_path: Path, sheet_list: List[str],
-                          time_offset: float = 0):
+                          time_offset: float = 0):    
     datapath = imscrollIO.def_data_path()
     state_category = '1'
     im_format = 'svg'
     for i_sheet in sheet_list:
         zero_state_interval_list = read_interval_data(parameter_file_path,
-                                                  datapath,
-                                                  i_sheet,
-                                                  '0',
-                                                  first_only=True)[0]
+                                                      datapath,
+                                                      i_sheet,
+                                                      '0',
+                                                      first_only=True)[0]
         n_right_censored = len(zero_state_interval_list[0].AOI)
         interval_list, n_good_traces, max_time = read_interval_data(parameter_file_path,
                                                                     datapath,
@@ -73,21 +78,73 @@ def find_first_dwell_time(parameter_file_path: Path, sheet_list: List[str],
                                                                     state_category,
                                                                     first_only=True)
         dwells = binding_kinetics.extract_first_binding_time(interval_list)
-        dwells['duration'] += time_offset        
+        dwells['duration'] += time_offset
+        max_time += time_offset
+        interval_censor_table = np.zeros((len(dwells.duration) + n_right_censored,
+                                          2))
+        
+        interval_censor_table[0:len(dwells.duration), 0] = dwells.duration.values
+        interval_censor_table[0:len(dwells.duration), 1] = xr.where(dwells.event_observed,
+                                                                    1,
+                                                                    2).values
+        interval_censor_table[len(dwells.duration): , 0] = max_time
+        interval_censor_table[len(dwells.duration): , 1] = 0
+        df = pd.DataFrame(interval_censor_table, columns=['time', 'status'])
+        
         if len(dwells.duration) == 0:
             print('no low state found')
             continue
-        kmf = KaplanMeierFitter()
-        exf = ExponentialFitter()
-        
-        kmf.fit_left_censoring(dwells.duration, dwells.event_observed)
-        exf.fit_left_censoring(dwells.duration, dwells.event_observed)
         n_event = np.count_nonzero(dwells.event_observed)
         n_censored = len(dwells.event_observed) - n_event
         stat_counts = (n_event, n_censored, n_right_censored)
-        save_fig_path = datapath / (i_sheet + '_' + '_first_dwell' + '.' + im_format)
-        plot_survival_curve(kmf, exf, 0, stat_counts, save_fig_path,
-                            x_right_lim=max_time)
+        
+        save_fig_path = datapath / (i_sheet + '_' + '_first_dwellr' + '.' + im_format)
+        call_r_survival(df, save_fig_path, stat_counts)
+        
+
+def call_r_survival(df: pd.DataFrame, save_path: Path, stat_counts: Tuple[int, int,int]):
+    rpy2.robjects.pandas2ri.activate()
+    survival = importr('survival')
+    
+    with localconverter(robjects.default_converter + rpy2.robjects.pandas2ri.converter):
+        r_from_pd_df = robjects.conversion.py2rpy(df)
+    robjects.r('surv <- with({}, Surv(time=time, time2=time, event=status, type="interval"))'.format(r_from_pd_df.r_repr()))
+    robjects.r('fit <- survfit(surv~1, data={})'.format(r_from_pd_df.r_repr()))
+    robjects.r('fit0 <- survfit0(fit)')
+    time = robjects.r('fit0[["time"]]')
+    surv = robjects.r('fit0[["surv"]]')
+    upper_ci = robjects.r('fit0[["upper"]]')
+    lower_ci = robjects.r('fit0[["lower"]]')
+    
+    robjects.r('exreg <- survreg(surv~1, data={}, dist="exponential")'.format(r_from_pd_df.r_repr()))
+    intercept = robjects.r('exreg["coefficients"]')[0].item()
+    log_var = robjects.r('exreg["var"]')[0].item()
+    k = np.exp(-intercept)
+    tau_ci = np.exp(intercept + np.array([-1, 1])*log_var)
+    x = np.linspace(0, time[-1], time[-1]*10)
+    y = np.exp(-k*x)
+    
+    plt.step(time, surv, where='post')
+    plt.plot(x, y)
+    plt.step(time, upper_ci, 'c', where='post')
+    plt.step(time, lower_ci, 'c', where='post')
+    plt.ylim(bottom=0)
+    ax = plt.gca()
+    k_str = r'$k_{{{}}}$ = {:.1f} s'.format('obs', 1/k.item())
+    plt.text(0.6, 0.8, k_str, transform=ax.transAxes, fontsize=14)
+    string = '{}, {}, {}'.format(*stat_counts)
+    plt.text(0.6, 0.6, string, transform=ax.transAxes, fontsize=14)
+    ci_string = 'ci: [{:.1f}, {:.1f}]'.format(tau_ci[0], tau_ci[1])
+    plt.text(0.6, 0.7, ci_string, transform=ax.transAxes, fontsize=14)
+    
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.savefig(save_path, format='svg', Transparent=True,
+                dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    
+    
+    
 
 
 def plot_survival_curve(kmf: KaplanMeierFitter,
@@ -106,7 +163,7 @@ def plot_survival_curve(kmf: KaplanMeierFitter,
     k_str = r'$k_{{{}}}$ = {:.1f} s'.format(obs_off_str[state], exf.lambda_)
     string = '{}, {}, {}'.format(*stat_counts)
     plt.text(0.6, 0.8, k_str, transform=ax.transAxes, fontsize=14)
-    plt.text(0.6, 0.6, string, transform=ax.transAxes, fontsize=14)
+    plt.text(0.6, 0.6, string, transform=ax.transAxes, fontsize=14)    
     plt.xlim(left=0)
     if x_right_lim is not None:
         plt.xlim(right=x_right_lim)
