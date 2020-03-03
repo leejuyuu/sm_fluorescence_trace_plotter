@@ -6,7 +6,7 @@ class TestFitting(unittest.TestCase):
 
     def test_functional(self):
         # Jack has a x, y dataset. He want to fit the data to a straight line.
-        x = np.linspace(0, 100, 0.1)
+        x = np.linspace(0, 100, 1000)
         y = 2 * x + 1
 
         # Jack calls the main function in the fitting module, and gets a return
