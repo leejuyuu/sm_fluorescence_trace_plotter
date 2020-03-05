@@ -21,6 +21,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
+import numpy as np
 from python_for_imscroll import imscrollIO
 from python_for_imscroll import binding_kinetics
 
@@ -95,6 +96,36 @@ def main():
                 molecule_data = data.sel(AOI=iAOI)
                 plot_one_trace_and_save(molecule_data, key,
                                         save_dir=save_dir, save_format=im_format)
+
+
+def plot_scatter_and_linear_fit(x, y, fit_result: dict,
+                                save_fig_path: Path = None,
+                                x_label: str = '',
+                                y_label: str = '',
+                                left_bottom_as_origin=False):
+    fig, ax = plt.subplots()
+    ax.scatter(x, y)
+    line_x = np.linspace(min(x), max(x), 10)
+    line_y = line_x * fit_result['slope'] + fit_result['intercept']
+    ax.plot(line_x, line_y)
+    if left_bottom_as_origin:
+        ax.set_xlim(left=0)
+        ax.set_ylim(bottom=0)
+    if not x_label:
+        x_label = input('Enter x axis label:\n')
+    if not y_label:
+        y_label = input('Enter y axis label:\n')
+    ax.set_xlabel(x_label, fontsize=16)
+    ax.set_ylabel(y_label, fontsize=16)
+    ax.text(0.1, 0.9, r'$y = {:.5f}x + {:.5f}$'.format(fit_result['slope'],
+                                                       fit_result['intercept']),
+            transform=ax.transAxes, fontsize=12)
+    ax.text(0.1, 0.8, r'$R^2 = {:.5f}$'.format(fit_result['r_squared']),
+            transform=ax.transAxes, fontsize=12)
+    plt.rcParams['svg.fonttype'] = 'none'
+    fig.savefig(save_fig_path, format='svg', Transparent=True, dpi=300, bbox_inches='tight')
+
+
 
 
 if __name__ == '__main__':
