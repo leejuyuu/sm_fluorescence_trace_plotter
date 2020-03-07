@@ -67,6 +67,7 @@ def find_first_dwell_time(parameter_file_path: Path, sheet_list: List[str],
     state_category = '1'
     im_format = 'svg'
     for i_sheet in sheet_list:
+        time_offset = read_time_offset(parameter_file_path, i_sheet)
         zero_state_interval_list = read_interval_data(parameter_file_path,
                                                       datapath,
                                                       i_sheet,
@@ -183,6 +184,11 @@ def plot_survival_curve(kmf: KaplanMeierFitter,
     plt.close()
 
 
+def read_time_offset(parameter_file_path: Path, sheet: str):
+    dfs = pd.read_excel(parameter_file_path, sheet_name=sheet)
+    return dfs['time offset'][0]
+
+
 def read_interval_data(parameter_file_path: Path,
                        datapath: Path,
                        sheet: str,
@@ -218,7 +224,7 @@ def main():
     xlsx_parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
     sheet_list = imscrollIO.input_sheets_for_analysis()
     # find_two_state_dwell_time(xlsx_parameter_file_path, sheet_list)
-    find_first_dwell_time(xlsx_parameter_file_path, sheet_list, time_offset=120)
+    find_first_dwell_time(xlsx_parameter_file_path, sheet_list)
 
 
 if __name__ == '__main__':
