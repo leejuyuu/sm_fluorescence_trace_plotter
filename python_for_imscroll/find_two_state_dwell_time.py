@@ -19,6 +19,7 @@
 
 from typing import List, Tuple
 from pathlib import Path
+import h5py
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -141,10 +142,18 @@ def call_r_survival(df: pd.DataFrame, save_path: Path, stat_counts: Tuple[int, i
     plt.savefig(save_path, format='svg', Transparent=True,
                 dpi=300, bbox_inches='tight')
     plt.close()
-    
-    
-    
-    
+    data_file_path = save_path.with_suffix('.hdf5')
+    with h5py.File(data_file_path, 'w') as f:
+        column_keys = np.array(['time', 'survival', 'upper_ci', 'lower_ci'], dtype='S')
+        group_survival_curve = f.create_group('survival_curve')
+        group_survival_curve.create_dataset('column_keys', column_keys.shape,
+                                            column_keys.dtype, column_keys)
+        surv_data = np.stack([time, surv, upper_ci, lower_ci])
+        group_survival_curve.create_dataset('data', surv_data.shape,
+                                            'f', surv_data)
+        group_exp_model = f.create_group('exp_model')
+        group_exp_model.create_dataset('k', (1,), 'f', k)
+        group_exp_model.create_dataset('log_variance', (1,), 'f', log_var)
 
 
 def plot_survival_curve(kmf: KaplanMeierFitter,
