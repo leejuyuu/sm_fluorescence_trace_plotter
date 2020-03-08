@@ -24,7 +24,8 @@ from python_for_imscroll import imscrollIO
 from python_for_imscroll import binding_kinetics as bk
 
 
-def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str]):
+def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str], datapath: Path = None,
+                              save_file=True):
     """Categorize traces into bad and analyzable categories.
 
     Run through each entry in the specified sheets in the parameter file.
@@ -32,7 +33,8 @@ def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str]):
         parameter_file_path: The path of the xlsx parameter file
         sheet_list: A list of sheet names to be analyzed.
     """
-    datapath = imscrollIO.def_data_path()
+    if datapath is None:
+        datapath = imscrollIO.def_data_path()
     for i_sheet in sheet_list:
         dfs = pd.read_excel(parameter_file_path, sheet_name=i_sheet)
         nFiles = dfs.shape[0]
@@ -60,10 +62,11 @@ def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str]):
             all_data = {'data': data,
                         'intervals': intervals,
                         'state_info': state_info}
-            bk.save_all_data(all_data, AOI_categories, datapath / (filestr + '_all.json'))
+            if save_file:
+                bk.save_all_data(all_data, AOI_categories, datapath / (filestr + '_all.json'))
 
             print(filestr + ' finished')
-
+    return all_data, AOI_categories
 
 def main():
     """main function"""
