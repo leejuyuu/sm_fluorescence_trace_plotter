@@ -24,7 +24,9 @@ import pandas as pd
 from python_for_imscroll import imscrollIO
 
 
-def group_imscroll_data_to_xr_json(xlspath: Path, sheet_list: List[str]):
+def group_imscroll_data_to_xr_json(xlspath: Path, sheet_list: List[str],
+                                   datapath: Path = None,
+                                   save_file=True):
     """Group imscroll output files into a single xarray object.
 
     Run through each entry in the specified sheets in the parameter file.
@@ -32,7 +34,8 @@ def group_imscroll_data_to_xr_json(xlspath: Path, sheet_list: List[str]):
         xlspath: The path of the xlsx parameter file
         sheet_list: A list of sheet names to be analyzed.
     """
-    datapath = imscrollIO.def_data_path()
+    if datapath is None:
+        datapath = imscrollIO.def_data_path()
     for i_sheet in sheet_list:
         dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
 
@@ -50,7 +53,9 @@ def group_imscroll_data_to_xr_json(xlspath: Path, sheet_list: List[str]):
                 print('error in {}'.format(filestr))
                 continue
 
-            imscrollIO.save_data_to_json(datapath / (filestr + '_data.json'), data)
+            if save_file:
+                imscrollIO.save_data_to_json(datapath / (filestr + '_data.json'), data)
+    return data
 
 
 def main():
