@@ -43,7 +43,7 @@ def test_categorization():
     aoi_categories['analyzable'] = analyzable_key_casted
     assert aoi_categories == true_aoi_categories
     for key in true_all_data:
-        if key in ('state_info', 'intervals'):
+        if key in ('intervals',):
             xarray.testing.assert_equal(all_data[key], true_all_data[key])
         else:
             for channel in set(true_all_data[key].channel.values.tolist()):
