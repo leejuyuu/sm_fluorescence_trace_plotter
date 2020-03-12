@@ -1,0 +1,11 @@
+h5py
+lifelines
+matplotlib
+numpy
+pandas
+PyQt5
+PySide2
+rpy2
+scipy
+xarray
+xlrd
