@@ -37,9 +37,7 @@ def categorize_binding_traces(parameter_file_path: Path, sheet_list: List[str], 
         datapath = imscrollIO.def_data_path()
     for i_sheet in sheet_list:
         dfs = pd.read_excel(parameter_file_path, sheet_name=i_sheet)
-        nFiles = dfs.shape[0]
-        for iFile in range(0, nFiles):
-            filestr = dfs.filename[iFile]
+        for filestr in dfs.filename:
             AOI_categories = {}
 
             try:

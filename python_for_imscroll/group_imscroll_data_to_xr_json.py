@@ -39,10 +39,7 @@ def group_imscroll_data_to_xr_json(xlspath: Path, sheet_list: List[str],
     for i_sheet in sheet_list:
         dfs = pd.read_excel(xlspath, sheet_name=i_sheet)
 
-        n_files = dfs.shape[0]
-        for i_file in range(0, n_files):
-            filestr = dfs.filename[i_file]
-
+        for filestr in dfs.filename:
             data = imscrollIO.initialize_data_from_intensity_traces(datapath, filestr)
             data.attrs['target_channel'] = 'blue'
             data.attrs['binder_channel'] = ['green']
