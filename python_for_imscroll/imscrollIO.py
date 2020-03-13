@@ -179,7 +179,7 @@ def import_interval_results(data):
         for iAOI in range(0, data.intensity.shape[0]):
             i_interval_traces[iAOI, :] = \
                 interval_file['intervals'][i_channel][0, 0]['AllTracesCellArray'][0, 0][iAOI, 0][:, 0]
-        i_interval_traces = np.expand_dims(i_interval_traces, 3)
+        i_interval_traces = np.expand_dims(i_interval_traces, 2)
         i_interval_traces = xr.DataArray(i_interval_traces,
                                          dims=('AOI', 'time', 'channel'),
                                          coords={'AOI': range(1, data.intensity.shape[0] + 1),
@@ -204,7 +204,7 @@ def import_viterbi_paths(data):
         for iAOI in range(0, len(data.AOI)):
             i_vit[iAOI, :, 0] = eb_file[i_channel][0, 0]['Vit'][0, 0][0, iAOI]['x'].squeeze()
             i_vit[iAOI, :, 1] = eb_file[i_channel][0, 0]['Vit'][0, 0][0, iAOI]['z'].squeeze()
-        i_vit = np.expand_dims(i_vit, 4)
+        i_vit = np.expand_dims(i_vit, 3)
         i_viterbi_path = xr.DataArray(i_vit,
                                       dims=('AOI', 'time', 'state', 'channel'),
                                       coords={'channel': [i_channel],

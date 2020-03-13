@@ -1,5 +1,5 @@
 import unittest
-import binding_kinetics as bk
+from python_for_imscroll import binding_kinetics as bk
 import numpy as np
 import xarray as xr
 
