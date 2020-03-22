@@ -17,6 +17,7 @@
 
 import sys
 import json
+from collections import OrderedDict
 from typing import List
 from pathlib import Path
 import scipy.io as sio
@@ -90,7 +91,7 @@ def import_channels_info(datapath, filestr):
     channels_info_file_path = datapath / (filestr + '_channels.dat')
     channels_info_file = sio.loadmat(channels_info_file_path)
     channels_info = channels_info_file['channelsInfo']
-    channels_info_dict = dict()
+    channels_info_dict = OrderedDict()
     for i in range(channels_info.shape[0]):
         channels_info_dict[channels_info[i, 0].item()] = Path(channels_info[i, 1].item())
 
@@ -140,7 +141,19 @@ def initialize_data_from_intensity_traces(datapath, filestr):
     data = data.dropna(dim='channel_time', how='all')
     data.attrs['datapath'] = datapath
     data.attrs['filestr'] = filestr
+    data = define_channels(data, channels_info)
 
+    return data
+
+
+def define_channels(data, channels_info):
+    binder_channel = []
+    for i, channel in enumerate(channels_info):
+        if not i:
+            data.attrs['target_channel'] = channel
+        else:
+            binder_channel.append(channel)
+    data.attrs['binder_channel'] = binder_channel
     return data
 
 
