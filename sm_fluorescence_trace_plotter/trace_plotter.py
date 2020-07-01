@@ -31,9 +31,9 @@ from PySide2.QtQuick import QQuickView
 from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
                             QStringListModel, QModelIndex, Signal, Slot,
                             Property, QObject)
-from sm_fluorescence_trace_plotter.python_for_imscroll import (imscrollIO,
-                                                               binding_kinetics,
-                                                               visualization)
+from sm_fluorescence_trace_plotter.python_for_imscroll.python_for_imscroll import (imscrollIO,
+                                                                                   binding_kinetics,
+                                                                                   visualization)
 
 
 class TraceInfoModel(QAbstractListModel):
