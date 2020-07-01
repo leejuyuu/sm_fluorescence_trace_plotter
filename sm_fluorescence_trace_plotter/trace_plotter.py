@@ -15,7 +15,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with SM_fluorescence_trace_plotter.  If not, see <https://www.gnu.org/licenses/>.
 
-"""main function"""
+"""This module is a GUI plotting tool for CoSMoS intensity data visualization.
+
+This module reads """
 
 import typing
 import sys
@@ -35,7 +37,9 @@ from sm_fluorescence_trace_plotter.python_for_imscroll import (imscrollIO,
 
 
 class TraceInfoModel(QAbstractListModel):
+    """Stores information about the current trace and interacts with view.
 
+    """
     def __init__(self, parameter_file_path):
         super(TraceInfoModel, self).__init__()
         self.parameter_file_path = parameter_file_path
@@ -218,6 +222,7 @@ class TraceInfoModel(QAbstractListModel):
 
 
 class TraceModel(QAbstractTableModel):
+    """Trace Model"""
 
     def __init__(self, trace_info_model: TraceInfoModel):
         super(TraceModel, self).__init__()
