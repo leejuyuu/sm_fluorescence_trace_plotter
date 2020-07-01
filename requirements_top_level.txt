@@ -1,0 +1,9 @@
+lifelines
+matplotlib
+numpy
+pandas
+pyqtgraph
+PySide2
+scipy
+xarray
+xlrd
