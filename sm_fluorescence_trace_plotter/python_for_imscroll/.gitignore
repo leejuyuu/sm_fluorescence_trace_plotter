@@ -1,14 +1,10 @@
-
-/.idea/workspace/.xml
-
-\.idea/workspace\.xml
-
 .idea/workspace.xml
 
-venv/
+.venv/
 
 __pycache__/
 
 *.png
 
 *.csv
+.vscode/
