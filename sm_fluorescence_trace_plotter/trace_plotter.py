@@ -27,7 +27,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 from PySide2.QtQuickWidgets import QQuickWidget
-from PySide2.QtWidgets import QApplication
+from PySide2.QtWidgets import QApplication, QWidget, QGridLayout
 from PySide2.QtQuick import QQuickView
 from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
                             QStringListModel, QModelIndex, Signal, Slot,
@@ -362,6 +362,7 @@ def main():
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
+    window = QWidget()
     view = QQuickWidget()
     view.setResizeMode(QQuickWidget.SizeRootObjectToView)
     root_context = view.rootContext()
@@ -370,7 +371,11 @@ def main():
     root_context.setContextProperty('traceModel', trace_model)
     qml_path = Path(__file__).parent / 'qml/main.qml'
     view.setSource(QUrl(str(qml_path)))
-    view.show()
+
+    layout = QGridLayout()
+    layout.addWidget(view, 0, 0)
+    window.setLayout(layout)
+    window.show()
     sys.exit(app.exec_())
 
 
