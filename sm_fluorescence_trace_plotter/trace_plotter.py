@@ -114,8 +114,8 @@ class TraceInfoModel(QAbstractListModel):
         """Set the maximum molecule number to the input int. Used by TraceModel"""
         self.max_molecule = number
 
-    def refresh(self, topleft: QModelIndex, bottomright: QModelIndex,
-                role: list = None):
+    def update_current_molecule(self, topleft: QModelIndex, bottomright: QModelIndex,
+                                role: list = None):
         """Connected to self.dataChanged signal. Update the current molecule
         number if it is changed."""
         if topleft == bottomright:
