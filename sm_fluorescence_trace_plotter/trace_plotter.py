@@ -26,6 +26,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import pandas as pd
+from PySide2.QtQuickWidgets import QQuickWidget
 from PySide2.QtWidgets import QApplication
 from PySide2.QtQuick import QQuickView
 from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
@@ -361,8 +362,8 @@ def main():
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
-    view = QQuickView()
-    view.setResizeMode(QQuickView.SizeRootObjectToView)
+    view = QQuickWidget()
+    view.setResizeMode(QQuickWidget.SizeRootObjectToView)
     root_context = view.rootContext()
     root_context.setContextProperty('traceInfoModel',
                                     trace_model.trace_info_model)
