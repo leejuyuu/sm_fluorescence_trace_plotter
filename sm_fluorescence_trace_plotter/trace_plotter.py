@@ -26,6 +26,9 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import pandas as pd
+import pyqtgraph as pg
+pg.setConfigOption('background', 'w')
+pg.setConfigOption('foreground', 'k')
 from PySide2.QtQuickWidgets import QQuickWidget
 from PySide2.QtWidgets import QApplication, QWidget, QGridLayout
 from PySide2.QtQuick import QQuickView
@@ -353,6 +356,29 @@ class TraceModel(QAbstractTableModel):
                                               fov_dir, save_format='svg')
 
 
+class TracePlot(pg.GraphicsLayoutWidget):
+    def __init__(self):
+        super().__init__()
+        self.y = np.random.random(100)
+        pen = pg.mkPen(color=(255, 0, 0), width=1)
+        self.plot = self.addPlot()
+        self.curve = self.plot.plot(self.y, pen=pen)
+        # self.plot.setXRange(0, 100)
+        # self.plot.setYRange(0, 1)
+        # self.curve = self.getPlotItem().plot(self.y, pen=pen)
+        self.data_model = None
+        # self.plot()
+
+    def setModel(self, model: TraceModel):
+        self.data_model = model
+        self.data_model.dataChanged.connect(self.update)
+
+    def update(self):
+        self.x = np.arange(100)
+        self.y = np.random.random(100)
+        self.curve.setData(self.x, self.y)
+
+
 def main():
     """Starts the GUI window after asking for the parameter file."""
     parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
@@ -373,7 +399,10 @@ def main():
     view.setSource(QUrl(str(qml_path)))
 
     layout = QGridLayout()
-    layout.addWidget(view, 0, 0)
+    plot = TracePlot()
+    plot.setModel(trace_model)
+    layout.addWidget(plot, 0, 0)
+    layout.addWidget(view, 0, 1)
     window.setLayout(layout)
     window.show()
     sys.exit(app.exec_())
