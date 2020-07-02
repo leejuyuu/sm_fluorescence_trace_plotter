@@ -5,7 +5,7 @@ import QtQuick.Controls 2.14
 
 Item {
     id: root
-    width: 1000
+    width: 500
     height: 600
 
     // For attracting focus when clicked to leave TextField focused state
@@ -23,35 +23,12 @@ Item {
             margins: 40
         }
 
-        TraceChart {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            // Somehow, when the variable name and the property name collide, the plot
-            // won't show properly
-            traceDataModel: traceModel            
-            timeColumnNumber: 0            
-        }
-
-        TraceChart {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            traceDataModel: traceModel
-            timeColumnNumber: 3
-        }
-
-        TraceChart {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            traceDataModel: traceModel
-            timeColumnNumber: 6
-        }
 
         ListView {
 
             Layout.rowSpan: 2
             Layout.fillHeight: true
-            Layout.preferredWidth: gridLayout.width * 0.4
+            Layout.preferredWidth: gridLayout.width
             Layout.minimumWidth: 200
             model: traceInfoModel
             orientation: ListView.Vertical
@@ -163,7 +140,7 @@ Item {
 
         Rectangle {
             Layout.rowSpan: 1
-            Layout.preferredWidth: gridLayout.width * 0.4
+            Layout.preferredWidth: gridLayout.width
             Layout.fillHeight: true
 
             Button {

@@ -197,7 +197,7 @@ class TraceInfoModel(QAbstractListModel):
 
     @Slot()
     def debug(self):
-        pass
+        breakpoint()
 
     def _read_sheet_model(self):
         return self.sheet_model
@@ -357,26 +357,27 @@ class TraceModel(QAbstractTableModel):
 
 
 class TracePlot(pg.GraphicsLayoutWidget):
-    def __init__(self):
+    def __init__(self, model: TraceModel):
         super().__init__()
-        self.y = np.random.random(100)
-        pen = pg.mkPen(color=(255, 0, 0), width=1)
-        self.plot = self.addPlot()
-        self.curve = self.plot.plot(self.y, pen=pen)
-        # self.plot.setXRange(0, 100)
-        # self.plot.setYRange(0, 1)
-        # self.curve = self.getPlotItem().plot(self.y, pen=pen)
-        self.data_model = None
-        # self.plot()
-
-    def setModel(self, model: TraceModel):
         self.data_model = model
         self.data_model.dataChanged.connect(self.update)
+        # xkcd purple blue,[tried green]
+        pens = {'blue': pg.mkPen(color='#632de9', width=2),
+                'green': pg.mkPen(color='#14C823', width=2),
+                'red': pg.mkPen(color='#e50000', width=2)}
+        self.plots = {channel: self.addPlot(row=row, col=0) for row, channel in enumerate(self.data_model.channels)}
+        self.int_curves = {channel: plot.plot(pen=pens[channel]) for channel, plot in self.plots.items()}
+        self.state_curves = {channel: plot.plot(pen=pg.mkPen(color='k', width=3)) for channel, plot in self.plots.items()}
+        self.update()
+
 
     def update(self):
-        self.x = np.arange(100)
-        self.y = np.random.random(100)
-        self.curve.setData(self.x, self.y)
+        molecule = self.data_model.trace_info_model.current_molecule
+        for i, channel in enumerate(self.data_model.channels):
+            data = self.data_model.data_xr.sel(channel=channel, AOI=molecule)
+            self.int_curves[channel].setData(data.time, data.intensity)
+            self.state_curves[channel].setData(data.time, data.viterbi_path.sel(state='position'))
+
 
 
 def main():
@@ -399,8 +400,7 @@ def main():
     view.setSource(QUrl(str(qml_path)))
 
     layout = QGridLayout()
-    plot = TracePlot()
-    plot.setModel(trace_model)
+    plot = TracePlot(model=trace_model)
     layout.addWidget(plot, 0, 0)
     layout.addWidget(view, 0, 1)
     window.setLayout(layout)
