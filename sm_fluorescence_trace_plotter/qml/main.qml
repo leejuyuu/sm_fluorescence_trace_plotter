@@ -13,6 +13,14 @@ Item {
         anchors.fill: parent
         onClicked: {focus=true}
     }
+    Keys.onPressed: {
+        if (event.key == Qt.Key_Left) {
+            previousMoleculeButton.clicked()
+        }
+        else if (event.key == Qt.Key_Right) {
+            nextMoleculeButton.clicked()
+        }
+    }
 
     GridLayout {
         id: gridLayout
