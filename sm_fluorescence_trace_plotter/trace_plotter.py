@@ -365,15 +365,18 @@ class TracePlot(pg.GraphicsLayoutWidget):
         pens = {'blue': pg.mkPen(color='#632de9', width=2),
                 'green': pg.mkPen(color='#14C823', width=2),
                 'red': pg.mkPen(color='#e50000', width=2)}
-        self.plots = {channel: self.addPlot(row=row, col=0) for row, channel in enumerate(self.data_model.channels)}
-        self.int_curves = {channel: plot.plot(pen=pens[channel]) for channel, plot in self.plots.items()}
-        self.state_curves = {channel: plot.plot(pen=pg.mkPen(color='k', width=3)) for channel, plot in self.plots.items()}
+        self.plots = {channel: self.addPlot(row=row, col=0)
+                      for row, channel in enumerate(self.data_model.channels)}
+        self.int_curves = {channel: plot.plot(pen=pens[channel])
+                           for channel, plot in self.plots.items()}
+        self.state_curves = {channel: plot.plot(pen=pg.mkPen(color='k', width=3))
+                             for channel, plot in self.plots.items()}
         self.update()
 
 
     def update(self):
         molecule = self.data_model.trace_info_model.current_molecule
-        for i, channel in enumerate(self.data_model.channels):
+        for channel in self.data_model.channels:
             data = self.data_model.data_xr.sel(channel=channel, AOI=molecule)
             self.int_curves[channel].setData(data.time, data.intensity)
             self.state_curves[channel].setData(data.time, data.viterbi_path.sel(state='position'))
