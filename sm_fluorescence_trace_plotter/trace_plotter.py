@@ -327,32 +327,37 @@ class TracePlot(pg.GraphicsLayoutWidget):
             self.int_curves[channel].setData(data.time, data.intensity)
             self.state_curves[channel].setData(data.time, data.viterbi_path.sel(state='position'))
 
+class MainWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
+        trace_info_model = TraceInfoModel(parameter_file_path)
+        trace_model = TraceModel(trace_info_model)
+
+        view = QQuickWidget()
+        view.setResizeMode(QQuickWidget.SizeRootObjectToView)
+        root_context = view.rootContext()
+        root_context.setContextProperty('traceInfoModel',
+                                        trace_model.trace_info_model)
+        root_context.setContextProperty('traceModel', trace_model)
+        qml_path = Path(__file__).parent / 'qml/main.qml'
+        view.setSource(QUrl(str(qml_path)))
+
+        layout = QGridLayout()
+        plot = TracePlot(model=trace_model)
+        layout.addWidget(plot, 0, 0)
+        layout.addWidget(view, 0, 1)
+        self.setLayout(layout)
 
 
 def main():
     """Starts the GUI window after asking for the parameter file."""
-    parameter_file_path = imscrollIO.get_xlsx_parameter_file_path()
-    trace_info_model = TraceInfoModel(parameter_file_path)
-    trace_model = TraceModel(trace_info_model)
 
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
-    window = QWidget()
-    view = QQuickWidget()
-    view.setResizeMode(QQuickWidget.SizeRootObjectToView)
-    root_context = view.rootContext()
-    root_context.setContextProperty('traceInfoModel',
-                                    trace_model.trace_info_model)
-    root_context.setContextProperty('traceModel', trace_model)
-    qml_path = Path(__file__).parent / 'qml/main.qml'
-    view.setSource(QUrl(str(qml_path)))
-
-    layout = QGridLayout()
-    plot = TracePlot(model=trace_model)
-    layout.addWidget(plot, 0, 0)
-    layout.addWidget(view, 0, 1)
-    window.setLayout(layout)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())
 
