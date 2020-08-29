@@ -23,16 +23,13 @@ import typing
 import sys
 from collections import namedtuple
 from pathlib import Path
-import numpy as np
-import xarray as xr
 import pandas as pd
 import pyqtgraph as pg
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 from PySide2.QtQuickWidgets import QQuickWidget
 from PySide2.QtWidgets import QApplication, QWidget, QGridLayout
-from PySide2.QtQuick import QQuickView
-from PySide2.QtCore import (Qt, QUrl, QAbstractListModel, QAbstractTableModel,
+from PySide2.QtCore import (Qt, QUrl, QAbstractListModel,
                             QStringListModel, QModelIndex, Signal, Slot,
                             Property, QObject)
 from sm_fluorescence_trace_plotter.python_for_imscroll.python_for_imscroll import (imscrollIO,
@@ -225,11 +222,12 @@ class TraceInfoModel(QAbstractListModel):
     fovModel = Property(QObject, _read_fov_model, notify=fov_model_changed)
 
 
-class TraceModel(QAbstractTableModel):
+class TraceModel(QObject):
     """Trace Model"""
+    dataChanged = Signal()
 
     def __init__(self, trace_info_model: TraceInfoModel):
-        super(TraceModel, self).__init__()
+        super().__init__()
         self.trace_info_model = trace_info_model
         self.trace_info_model.molecule_changed.connect(self.change_molecule, Qt.UniqueConnection)
         self.trace_info_model.trace_model_should_change_file.connect(self.change_file,
@@ -237,24 +235,6 @@ class TraceModel(QAbstractTableModel):
         self.datapath = imscrollIO.def_data_path()
         self.set_data_storage()
 
-    def rowCount(self, parent: QModelIndex = None) -> int:
-        """See base class."""
-        return self.data_array.shape[0]
-
-    def columnCount(self, parent: QModelIndex = None) -> int:
-        """See base class."""
-        return self.data_array.shape[1]
-
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
-        """See base class."""
-        aoi_data_array = self.data_array[:, :, self.trace_info_model.current_molecule-1]
-        row = index.row()
-        column = index.column()
-        if role == Qt.DisplayRole:
-            return aoi_data_array[row, column].item()
-        elif role == Qt.EditRole:
-            return aoi_data_array[row, column].item()
-        return None
 
     def get_category(self) -> typing.Union[str, None]:
         """Searches the current molecule in the AOI_catories dict and return the
@@ -279,27 +259,6 @@ class TraceModel(QAbstractTableModel):
             return category
         return None
 
-    def map_data_to_model_storage(self):
-        """Map the xarray dataset to np 2D array which can be read by this model.
-
-        Reorganize the time, intensity, and viterbi path in the data xarray
-        to np array with columns correspond to times and row indices corresponds
-        to the repetition of [time, intensity, viterbi path]. The order of
-        channels is specified in the dict row_color."""
-        outlist = []
-        self.row_color = dict()
-        i = 0
-        for channel in self.channels:
-            channel_data = self.data_xr.sel(channel=channel)
-            out = xr.concat((channel_data.time,
-                             channel_data.intensity,
-                             channel_data.viterbi_path.sel(state='position')),
-                            dim='').values
-            outlist.append(out)
-            self.row_color[i] = channel
-            i += 3
-        self.data_array = np.concatenate(outlist)
-
     def change_molecule(self):
         """Notifies the data model that the current molecule is changed.
 
@@ -307,7 +266,7 @@ class TraceModel(QAbstractTableModel):
         the category entry."""
         category = self.get_category()
         self.trace_info_model.set_category(category)
-        self.notify_whole_table_changed()
+        self.dataChanged.emit()
 
     def set_data_storage(self):
         """Reads trace data from _all.json file and store as attributes. Updates
@@ -321,7 +280,6 @@ class TraceModel(QAbstractTableModel):
         self.trace_info_model.set_category(category)
         self.data_xr = all_data['data']
         self.channels = [self.data_xr.target_channel] + self.data_xr.binder_channel
-        self.map_data_to_model_storage()
         self.trace_info_model.set_max_molecule_number(len(self.data_xr.AOI))
 
     def change_file(self):
@@ -329,19 +287,7 @@ class TraceModel(QAbstractTableModel):
 
         Connected to the TraceInfoModel.trace_model_should_change_file signal."""
         self.set_data_storage()
-        self.notify_whole_table_changed()
-
-    def notify_whole_table_changed(self):
-        """Emits dataChanged signal on the whole table to update the view """
-        topleft = self.createIndex(0, 0)
-        bottomright = self.createIndex(self.rowCount(), self.columnCount())
-        self.dataChanged.emit(topleft, bottomright)
-
-    @Slot(int, result=str)
-    def get_row_color(self, row: int = 0) -> str:
-        """Returns the corresponding channel name (color) to the input row
-        number of the table model."""
-        return self.row_color[row]
+        self.dataChanged.emit()
 
     @Slot()
     def save_fig(self):
