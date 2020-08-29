@@ -257,7 +257,7 @@ class TraceModel(QObject):
                     break
         if found:
             return category
-        return None
+        return ''
 
     def change_molecule(self):
         """Notifies the data model that the current molecule is changed.
@@ -275,7 +275,14 @@ class TraceModel(QObject):
             all_data, self.AOI_categories = binding_kinetics.load_all_data(
                 self.datapath / (self.trace_info_model.current_fov + '_all.json'))
         except FileNotFoundError:
-            print('file not found')
+            print('All file not found')
+            try:
+                data = imscrollIO.load_data_from_json(
+                    self.datapath / (self.trace_info_model.current_fov + '_data.json'))
+                all_data = {'data': data}
+                self.AOI_categories = dict()
+            except FileNotFoundError:
+                print('Data file not found')
         category = self.get_category()
         self.trace_info_model.set_category(category)
         self.data_xr = all_data['data']
