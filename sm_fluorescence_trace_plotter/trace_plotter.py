@@ -332,7 +332,8 @@ class TracePlot(pg.GraphicsLayoutWidget):
         for channel in self.data_model.channels:
             data = self.data_model.data_xr.sel(channel=channel, AOI=molecule)
             self.int_curves[channel].setData(data.time, data.intensity)
-            self.state_curves[channel].setData(data.time, data.viterbi_path.sel(state='position'))
+            if 'viterbi_path' in data:
+                self.state_curves[channel].setData(data.time, data.viterbi_path.sel(state='position'))
 
 class MainWindow(QWidget):
     def __init__(self):
