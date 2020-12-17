@@ -324,6 +324,8 @@ class TracePlot(pg.GraphicsLayoutWidget):
                            for channel, plot in self.plots.items()}
         self.state_curves = {channel: plot.plot(pen=pg.mkPen(color='k', width=3))
                              for channel, plot in self.plots.items()}
+        self.interval_curves = {channel: plot.plot(pen=pg.mkPen(color='#FFD300', width=3))
+                                for channel, plot in self.plots.items()}
         self.update()
 
 
@@ -332,6 +334,7 @@ class TracePlot(pg.GraphicsLayoutWidget):
         for channel in self.data_model.channels:
             data = self.data_model.data_xr.sel(channel=channel, AOI=molecule)
             self.int_curves[channel].setData(data.time, data.intensity)
+            self.interval_curves[channel].setData(data.time, 1000*(data.interval_traces%2))
             if 'viterbi_path' in data:
                 self.state_curves[channel].setData(data.time, data.viterbi_path.sel(state='position'))
 
